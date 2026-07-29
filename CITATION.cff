@@ -1,0 +1,10 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite the repository release."
+title: "Dome Suppression Scripts"
+type: software
+authors:
+  - family-names: "Yandrapalli"
+    given-names: "Naresh"
+repository-code: "https://github.com/nyandrapalli/dome-suppression-scripts"
+version: "7.10.0"
+date-released: "2026-07-30"

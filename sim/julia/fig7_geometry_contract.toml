@@ -1,0 +1,50 @@
+# Single-vesicle geometry contract supplied by the experimental measurement.
+# Units are micrometres unless otherwise stated. Do not overwrite this file
+# with fitted simulation values.
+
+[provenance]
+source = "User measurement from Fig. 7"
+same_vesicle_pre_and_post_ctb = true
+height_definition = "Post-CTB Lo-apex displacement along the reference-sphere outward normal"
+
+[pre_ctb_10nM_streptavidin]
+vesicle_diameter_um = 16.34
+vesicle_radius_um = 8.17
+reference_lo_cap_height_um = 3.30
+reference_lo_boundary_radius_um = 6.559878047646922
+reference_lo_boundary_diameter_um = 13.119756095293845
+total_area_um2 = 838.791415500799
+total_volume_um3 = 2284.3086215471762
+lo_area_um2 = 169.4009590668688
+ld_area_um2 = 669.3904564339301
+
+[post_ctb_10nM_streptavidin]
+lo_height_increase_um = 2.95
+lo_apex_radius_um = 11.12
+lo_north_pole_osculating_radius_um = 6.00
+ld_south_pole_osculating_radius_um = 8.52
+lo_ld_boundary_radius_um = 6.87
+boundary_normal_tilt_deg = 59.0
+lo_boundary_osculating_radius_um = 25.83
+
+[post_ctb_10nM_streptavidin.cap_measurement]
+# Independent direct cap measurement supplied after the local-curvature fit.
+# These values are retained as measured; they must not replace the fitted
+# boundary value above or be forced to agree exactly during calibration.
+lo_cap_height_um = 3.45
+lo_cap_diameter_um = 13.34
+lo_cap_boundary_radius_um = 6.67
+
+[acceptance]
+# Primary calibration observable. The remaining post-CTB values are independent
+# geometric validation observables and must not be imposed as constraints.
+primary_observable = "post_ctb_10nM_streptavidin.lo_height_increase_um"
+secondary_observables = [
+  "lo_north_pole_osculating_radius_um",
+  "ld_south_pole_osculating_radius_um",
+  "lo_ld_boundary_radius_um",
+  "boundary_normal_tilt_deg",
+  "lo_boundary_osculating_radius_um",
+  "cap_measurement.lo_cap_height_um",
+  "cap_measurement.lo_cap_diameter_um",
+]

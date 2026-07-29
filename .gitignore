@@ -1,0 +1,12 @@
+**/outputs/
+__pycache__/
+*.py[cod]
+.venv/
+.idea/
+.vscode/
+*.log
+*.mp4
+*.obj
+*.json
+*.png
+!.github/**/*.yml

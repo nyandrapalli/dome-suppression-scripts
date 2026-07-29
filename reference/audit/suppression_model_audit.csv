@@ -1,0 +1,15 @@
+item,value
+independent variable,streptavidin concentration (nM)
+energy-active concentration mapping,"epsilon_inner,Ld(c)=f_biotin*g_area*[theta(c)-theta(10 nM)]"
+fixed CTB Lo curvature,0.32696969696969697 um^-1
+fixed CTB Lo preferred-area shift,0.0458
+fixed CTB Lo area-difference shift,4.4508868760865135e-5
+fixed lipid spontaneous curvatures,C0_Ld_lipid=-0.003636363636363636 um^-1; C0_Lo_lipid=0.006363636363636364 um^-1
+fixed mechanical moduli,kappa_Lo=80.0 kBT; kappa_Ld=25.0 kBT; line tension=0.3 pN
+shared geometric coupling,"shared boundary geometry; force and moment balances follow from variation of domain, line, and Gaussian energies"
+inactive occupancy energy,zero
+inactive protein work,zero
+inactive direct Lo-Ld coupling,zero
+inactive target-shape force,zero
+branch selection,"lowest objective among accepted continuation, pre-reference, and domed seeds"
+mesh,641-node axisymmetric meridian

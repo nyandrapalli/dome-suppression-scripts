@@ -1,0 +1,17 @@
+term,pre_ctb_10nM,post_ctb_10nM,post_ctb_above_10nM,implementation
+Lo Helfrich bending,true,true,true,0.5*kappa_Lo*integral(2H-C0_Lo)^2 dA
+Ld Helfrich bending,true,true,true,0.5*kappa_Ld*integral(2H-C0_Ld)^2 dA
+Lo midplane-area elasticity,true,true,true,KA_Lo*(A_Lo-A0_Lo)^2/(2*A0_Lo)
+Ld midplane-area elasticity,true,true,true,KA_Ld*(A_Ld-A0_Ld)^2/(2*A0_Ld)
+Lo leaflet-area-difference elasticity,true,true,true,KDelta_Lo*(DeltaA_Lo-DeltaA0_Lo)^2/(2*A0_Lo)
+Ld leaflet-area-difference elasticity,true,true,true,KDelta_Ld*(DeltaA_Ld-DeltaA0_Ld)^2/(2*A0_Ld)
+CTB shift of preferred Lo area,false,true,true,A0_Lo -> A0_Lo*(1+epsilon_CTB/2)
+CTB shift of preferred Lo area difference,false,true,true,DeltaA0_Lo -> DeltaA0_Lo+epsilon_geometry*A0_Lo
+Strep shift of preferred inner-Ld area,false,false,true,A0_Ld -> A0_Ld*(1+epsilon_inner/2); DeltaA0_Ld -> DeltaA0_Ld-epsilon_inner*A0_Ld
+Lo/Ld line energy,true,true,true,lambda*L_LoLd
+Gaussian boundary energy,true,true,true,2*pi*DeltaKappaG*cos(psi_boundary)
+exact enclosed-volume constraint,true,true,true,V=V_reference
+direct Lo-Ld curvature coupling,false,false,false,inactive
+protein work,false,false,false,inactive
+target-shape force,false,false,false,inactive
+global ADE,false,false,false,inactive

@@ -1,0 +1,17 @@
+field,value
+purpose,test concentration-dependent local inner-Ld leaflet strain with the corrected natural two-phase interface
+shape mesh,641-node axisymmetric meridian
+tangent-angle admissibility,0 <= psi <= pi; local decreases are allowed and represent negative meridional curvature
+profile validity,"axial ordering, interior-axis contacts, and nonadjacent profile intersections checked after solve"
+volume constraint,fixed discrete reference volume using exact conical frusta
+area mechanics,fixed CTB Lo area/mismatch plus concentration-dependent preferred inner-Ld area
+curvature energy,domain-local Helfrich energy (2H-C0_domain)^2
+curvature sign convention,outward normal: sphere 2H>0; outer-leaflet sources C0>0; inner-leaflet sources C0<0
+interface mechanics,not added as duplicate constraints; follows variationally from the full two-phase energy
+interface residual estimator,one-sided linear extrapolation of 2H plus moment and transverse-shear residuals
+parameter transfer status,relative magnitudes from four-control study; scale fixed by V7.3 effective Ld curvature
+direct coupling,"inactive; domains communicate through shared shape, volume, and boundary"
+protein work,inactive
+target-shape force,inactive
+validation observable,post-minus-pre Lo protrusion relative to the fitted Ld sphere
+Ipopt Hessian,exact

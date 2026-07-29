@@ -1,0 +1,35 @@
+parameter,value
+mode,audit
+n_nodes,641
+ipopt_tol,1.0e-8
+ipopt_maxiter,16000
+psi_monotonicity_constraint,false
+geometry_tolerance,1.0e-7
+interior_axis_contact_tolerance_um,1.0e-5
+kappa_lo_kbt,80.0
+kappa_ld_kbt,25.0
+line_tension_pn,0.3
+gaussian_ratio,0.9
+delta_kappa_g_kbt,49.5
+prior_c0_ld_lipid_magnitude_um_inv,0.02
+prior_c0_ld_strep10_magnitude_um_inv,0.0625
+prior_c0_lo_lipid_magnitude_um_inv,0.035
+ratio_preserving_transfer_scale,0.1818181818181818
+target_c0_ld_combined10_um_inv,-0.015
+target_c0_lo_post_um_inv,0.3333333333333333
+c0_ld_lipid_um_inv,-0.003636363636363636
+c0_lo_lipid_um_inv,0.006363636363636364
+c0_ld_strep10_um_inv,-0.011363636363636362
+c0_ld_combined10_um_inv,-0.014999999999999998
+c0_lo_ctb_um_inv,0.32696969696969697
+c0_lo_post_total_um_inv,0.3333333333333333
+strep_saturation_nm,80.0
+inner_ld_biotin_mole_fraction,0.002
+bound_site_area_coupling,4.0
+ctb_lo_area_expansion,0.0458
+ctb_lo_leaflet_mismatch,4.4508868760865135e-5
+pre_sphere_tolerance_um,0.25
+corrected_dome_increase_target_um,2.95
+corrected_dome_acceptance_tolerance_um,0.5
+parameter_provenance,V7.3/V7.4 10 nM curvatures retained; additional occupancy acts only through preferred inner-Ld area
+target_profile_path,inactive: obsolete V6 20.3413-um contour excluded

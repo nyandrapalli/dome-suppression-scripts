@@ -1,0 +1,16 @@
+path,created_by
+state_table.csv,audit
+concentration_mapping.csv,audit
+suppression_model_audit.csv,audit
+parameter_role_audit.csv,audit
+energy_term_audit.csv,audit
+branch_plan.csv,audit
+candidate_branch_summary.csv,smoke
+selected_reference.csv,smoke
+selected_concentration_trace.csv,smoke
+selected_interface_balance.csv,smoke
+smoke_validation.csv,smoke
+*_summary.csv,smoke for every candidate
+*_nodes.csv,smoke for every candidate
+*_segments.csv,smoke for every candidate
+status.txt,audit or smoke

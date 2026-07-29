@@ -1,0 +1,97 @@
+check,passed,actual,expected
+nodes,True,641,641
+gamma_A,True,4.0,4.0
+concentrations,True,10;20;30;40;50;60;70;80,10;20;30;40;50;60;70;80
+all_selected_states_accepted,True,True,True
+10nM_reference_accepted,True,true,true
+monotonic_suppression,True,-0.04181485727888834,<=0.02 um successive increase
+10nM_incremental_area,True,0.0,0.0
+10nM_C0_Ld_fixed,True,-0.014999999999999998,-0.015
+10nM_C0_Lo_fixed,True,0.3333333333333333,0.3333333333333333
+10nM_volume,True,-7.96302367119435e-16,<=1e-8 absolute
+10nM_geometry,True,1.1690808043862688e-11,<=1e-7 um
+10nM_segment_ratio,True,1.048813850634684,<=2.0
+20nM_incremental_area,True,0.001,0.001
+20nM_C0_Ld_fixed,True,-0.014999999999999998,-0.015
+20nM_C0_Lo_fixed,True,0.3333333333333333,0.3333333333333333
+20nM_volume,True,-4.419478137512864e-14,<=1e-8 absolute
+20nM_geometry,True,9.220057495262779e-10,<=1e-7 um
+20nM_segment_ratio,True,1.0079910568703756,<=2.0
+30nM_incremental_area,True,0.002,0.002
+30nM_C0_Ld_fixed,True,-0.014999999999999998,-0.015
+30nM_C0_Lo_fixed,True,0.3333333333333333,0.3333333333333333
+30nM_volume,True,-3.5833606520374574e-14,<=1e-8 absolute
+30nM_geometry,True,2.971846373156506e-9,<=1e-7 um
+30nM_segment_ratio,True,1.0033418317948128,<=2.0
+40nM_incremental_area,True,0.003,0.003
+40nM_C0_Ld_fixed,True,-0.014999999999999998,-0.015
+40nM_C0_Lo_fixed,True,0.3333333333333333,0.3333333333333333
+40nM_volume,True,-1.4731593791709546e-14,<=1e-8 absolute
+40nM_geometry,True,2.6027350275015237e-9,<=1e-7 um
+40nM_segment_ratio,True,1.004076191943168,<=2.0
+50nM_incremental_area,True,0.004,0.004
+50nM_C0_Ld_fixed,True,-0.014999999999999998,-0.015
+50nM_C0_Lo_fixed,True,0.3333333333333333,0.3333333333333333
+50nM_volume,True,-6.171343345175621e-15,<=1e-8 absolute
+50nM_geometry,True,2.2780313815862208e-9,<=1e-7 um
+50nM_segment_ratio,True,1.0049084511270794,<=2.0
+60nM_incremental_area,True,0.005,0.005
+60nM_C0_Ld_fixed,True,-0.014999999999999998,-0.015
+60nM_C0_Lo_fixed,True,0.3333333333333333,0.3333333333333333
+60nM_volume,True,-3.583360652037457e-15,<=1e-8 absolute
+60nM_geometry,True,2.0083079990684816e-9,<=1e-7 um
+60nM_segment_ratio,True,1.0055026720834068,<=2.0
+70nM_incremental_area,True,0.006,0.006
+70nM_C0_Ld_fixed,True,-0.014999999999999998,-0.015
+70nM_C0_Lo_fixed,True,0.3333333333333333,0.3333333333333333
+70nM_volume,True,-3.18520946847774e-15,<=1e-8 absolute
+70nM_geometry,True,1.7753885861448993e-9,<=1e-7 um
+70nM_segment_ratio,True,1.005903105010445,<=2.0
+80nM_incremental_area,True,0.007,0.007
+80nM_C0_Ld_fixed,True,-0.014999999999999998,-0.015
+80nM_C0_Lo_fixed,True,0.3333333333333333,0.3333333333333333
+80nM_volume,True,-1.3935291424590111e-15,<=1e-8 absolute
+80nM_geometry,True,1.577096495064545e-9,<=1e-7 um
+80nM_segment_ratio,True,1.006167704482101,<=2.0
+80nM_restored_within_0p25um,True,0.24985346283004528,<=0.25 um
+trajectory_schema,True,fig7-v7.10-axisymmetric-production-trajectory-v1,fig7-v7.10-axisymmetric-production-trajectory-v1
+color_rule,True,"{'Ld': '#168447', 'Lo': '#d9362b'}","{'Ld': '#168447', 'Lo': '#d9362b'}"
+trajectory_state_count,True,9,9
+manifest_equilibrium_count,True,9,9
+optimizer_video_frames,True,32,>0
+optimizer_trace_rows,True,288,>0
+OBJ_count,True,9,9
+PNG_count,True,9,9
+post_ctb_strep_10nM_OBJ_vertices,True,92018,>1000
+post_ctb_strep_10nM_OBJ_faces,True,92160,>1000
+post_ctb_strep_10nM_OBJ_domains,True,Ld;Lo,Ld;Lo
+post_ctb_strep_20nM_OBJ_vertices,True,92018,>1000
+post_ctb_strep_20nM_OBJ_faces,True,92160,>1000
+post_ctb_strep_20nM_OBJ_domains,True,Ld;Lo,Ld;Lo
+post_ctb_strep_30nM_OBJ_vertices,True,92018,>1000
+post_ctb_strep_30nM_OBJ_faces,True,92160,>1000
+post_ctb_strep_30nM_OBJ_domains,True,Ld;Lo,Ld;Lo
+post_ctb_strep_40nM_OBJ_vertices,True,92018,>1000
+post_ctb_strep_40nM_OBJ_faces,True,92160,>1000
+post_ctb_strep_40nM_OBJ_domains,True,Ld;Lo,Ld;Lo
+post_ctb_strep_50nM_OBJ_vertices,True,92018,>1000
+post_ctb_strep_50nM_OBJ_faces,True,92160,>1000
+post_ctb_strep_50nM_OBJ_domains,True,Ld;Lo,Ld;Lo
+post_ctb_strep_60nM_OBJ_vertices,True,92018,>1000
+post_ctb_strep_60nM_OBJ_faces,True,92160,>1000
+post_ctb_strep_60nM_OBJ_domains,True,Ld;Lo,Ld;Lo
+post_ctb_strep_70nM_OBJ_vertices,True,92018,>1000
+post_ctb_strep_70nM_OBJ_faces,True,92160,>1000
+post_ctb_strep_70nM_OBJ_domains,True,Ld;Lo,Ld;Lo
+post_ctb_strep_80nM_OBJ_vertices,True,92018,>1000
+post_ctb_strep_80nM_OBJ_faces,True,92160,>1000
+post_ctb_strep_80nM_OBJ_domains,True,Ld;Lo,Ld;Lo
+pre_ctb_10nM_OBJ_vertices,True,92018,>1000
+pre_ctb_10nM_OBJ_faces,True,92160,>1000
+pre_ctb_10nM_OBJ_domains,True,Ld;Lo,Ld;Lo
+concentration_equilibria.mp4_nonempty,True,96885,>10000 bytes
+concentration_equilibria.mp4_duration,True,11.0,>0.5 s
+concentration_equilibria.mp4_dimensions,True,900x900,>=600x600
+numerical_equilibration.mp4_nonempty,True,98794,>10000 bytes
+numerical_equilibration.mp4_duration,True,2.666667,>0.5 s
+numerical_equilibration.mp4_dimensions,True,900x900,>=600x600

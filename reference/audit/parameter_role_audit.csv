@@ -1,0 +1,14 @@
+parameter,energy_active,metadata_only,role
+streptavidin concentration,true,false,mapped to bound-site fraction and then to preferred inner-Ld area
+inner-Ld biotin mole fraction,true,false,sets the maximum number of area-active inner-Ld binding sites
+C0_Ld_lipid,true,false,fixed Ld Helfrich target curvature
+C0_Ld_Strep(10 nM reference),true,false,fixed Ld Helfrich target curvature at its validated 10 nM value
+C0_Lo_lipid,true,false,fixed Lo Helfrich target curvature
+C0_Lo_CTB,true,false,fixed post-CTB Lo Helfrich target curvature
+CTB Lo preferred-area shift,true,false,fixed post-CTB preferred Lo area
+CTB Lo area-difference shift,true,false,fixed post-CTB preferred Lo area difference
+incremental inner-Ld preferred-area shift,true,false,changes Ld preferred midplane area by +epsilon/2 and outer-minus-inner area difference by -epsilon
+occupancy free energy,false,false,explicitly inactive
+protein work,false,false,explicitly inactive
+direct Lo-Ld coupling,false,false,explicitly inactive
+target-shape force,false,false,explicitly inactive

@@ -1,0 +1,4 @@
+branch,initial_state,selection_rule
+continuation,previous selected concentration; pre-CTB selected state at 10 nM,lowest objective among solver- and geometry-accepted branches
+pre_reference,selected pre-CTB 10 nM state,lowest objective among solver- and geometry-accepted branches
+fig7_domed_seed,independent Fig. 7 domed seed,lowest objective among solver- and geometry-accepted branches
