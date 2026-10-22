@@ -10,3 +10,4 @@ __pycache__/
 *.json
 *.png
 !.github/**/*.yml
+!python_continuum_remodeling/**/*.png
