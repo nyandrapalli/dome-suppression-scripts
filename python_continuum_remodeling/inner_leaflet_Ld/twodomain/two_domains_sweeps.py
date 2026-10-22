@@ -19,22 +19,18 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 
 sys.path.insert(0, os.path.dirname(__file__))
 
-try:
-    from mechanics_two_domains import TwoDomainParameters
-    from solver_two_domains import TwoDomainVesicleSolver
-except ImportError:
-    from sim_prl.mechanics_two_domains import TwoDomainParameters
-    from sim_prl.solver_two_domains import TwoDomainVesicleSolver
+from mechanics_two_domains import TwoDomainParameters
+from solver_two_domains import TwoDomainVesicleSolver
 
-# Expanded parameter grids
 GAMMA_GRID = [0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0]
 D_LO_GRID  = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0]
 V_GRID     = [0.90, 0.95, 0.98, 1.00]
 THETA_GRID = [0.0, 0.2, 0.4, 0.6, 0.8, 1.0]
 
+
 def _solve_two_domain_case(task):
     gamma_pN, D_Lo, v_val, theta, sweep_name, prof_file, out_dir = task
-    
+
     params = TwoDomainParameters(
         R_ves=5.0,
         D_Lo=D_Lo,
@@ -42,11 +38,10 @@ def _solve_two_domain_case(task):
         reduced_volume=v_val
     )
     solver = TwoDomainVesicleSolver(params=params, n_points=101)
-    
-    branch = "sphere" if theta == 0.0 else "inward"
+
+    branch = "sphere" if theta == 0.0 else "auto"
     res = solver.optimize_shape(theta=theta, branch=branch, maxiter=350, ftol=1e-9)
-    
-    # Save spatial profile CSV
+
     if prof_file:
         prof_path = os.path.join(out_dir, "profiles", prof_file)
         os.makedirs(os.path.dirname(prof_path), exist_ok=True)
@@ -60,22 +55,22 @@ def _solve_two_domain_case(task):
         })
         dom_tags = []
         for s_val in solver.s_grid:
-            if s_val <= solver.s_split1:
+            if s_val <= solver.s_split1 + 1e-12:
                 dom_tags.append("Lo_north")
-            elif s_val >= solver.s_split2:
+            elif s_val >= solver.s_split2 - 1e-12:
                 dom_tags.append("Lo_south")
             else:
                 dom_tags.append("Ld")
         df_prof["domain"] = dom_tags
         df_prof.to_csv(prof_path, index=False)
-        
+
     return {
         "sweep": sweep_name,
         "gamma_pN": gamma_pN,
         "D_Lo_um": D_Lo,
         "reduced_volume_v": v_val,
         "theta": theta,
-        "branch": branch,
+        "branch": res.get("branch", branch),
         "depth_north_um": res["dimple_depth_north"],
         "depth_south_um": res["dimple_depth_south"],
         "r_b1_um": res["r_b1"],
@@ -97,45 +92,43 @@ def _solve_two_domain_case(task):
         "profile_file": prof_file
     }
 
-def run_all_two_domain_sweeps(out_dir="simulation_results_prl/two_domains_sweeps", max_workers=None):
+
+def run_all_two_domain_sweeps(out_dir=None, max_workers=None):
+    if out_dir is None:
+        out_dir = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+            "results", "two_domains_sweeps"
+        )
     if max_workers is None:
         max_workers = os.cpu_count() or 4
-        
+
     os.makedirs(out_dir, exist_ok=True)
     os.makedirs(os.path.join(out_dir, "profiles"), exist_ok=True)
-    
+
     print("=" * 80)
     print("STARTING EXPANDED TWO-DOMAIN PRODUCTION PARAMETER SWEEPS")
     print(f"Parallel Workers: {max_workers} CPU cores")
-    print(f"1. Gamma sweep:       {len(GAMMA_GRID)} values in [0.5, 5.0] pN x {len(THETA_GRID)} thetas = {len(GAMMA_GRID)*len(THETA_GRID)} runs")
-    print(f"2. Domain Size sweep: {len(D_LO_GRID)} values in [1.0, 7.0] um x {len(THETA_GRID)} thetas = {len(D_LO_GRID)*len(THETA_GRID)} runs")
-    print(f"3. Deflation sweep:   {len(V_GRID)} values in [0.90, 1.00]   x {len(THETA_GRID)} thetas = {len(V_GRID)*len(THETA_GRID)} runs")
-    print(f"Total production runs: {len(GAMMA_GRID)*len(THETA_GRID) + len(D_LO_GRID)*len(THETA_GRID) + len(V_GRID)*len(THETA_GRID)}")
     print("=" * 80)
-    
+
     tasks = []
-    
-    # 1. Line Tension Sweep (D_Lo = 3.0 um, v = 0.98)
     for g in GAMMA_GRID:
         for th in THETA_GRID:
             p_file = f"prof_two_dom_gamma_{g:.1f}_theta_{th:.2f}.csv"
             tasks.append((g, 3.0, 0.98, th, "gamma", p_file, out_dir))
-            
-    # 2. Domain Size Sweep (gamma = 1.5 pN, v = 0.98)
+
     for d in D_LO_GRID:
         for th in THETA_GRID:
             p_file = f"prof_two_dom_DLo_{d:.1f}_theta_{th:.2f}.csv"
             tasks.append((1.5, d, 0.98, th, "D_Lo", p_file, out_dir))
-            
-    # 3. Deflation Sweep (gamma = 1.5 pN, D_Lo = 3.0 um)
+
     for v_val in V_GRID:
         for th in THETA_GRID:
             p_file = f"prof_two_dom_v_{v_val:.2f}_theta_{th:.2f}.csv"
             tasks.append((1.5, 3.0, v_val, th, "deflation", p_file, out_dir))
-            
+
     t0 = time.time()
     results = []
-    
+
     with ProcessPoolExecutor(max_workers=max_workers) as executor:
         futures = {executor.submit(_solve_two_domain_case, t): t for t in tasks}
         completed = 0
@@ -146,29 +139,30 @@ def run_all_two_domain_sweeps(out_dir="simulation_results_prl/two_domains_sweeps
             completed += 1
             if completed % 10 == 0 or completed == total:
                 elapsed = time.time() - t0
-                print(f"Progress: [{completed:3d}/{total:3d}] ({completed/total*100:5.1f}%) | Elapsed: {elapsed:5.1f}s | Last: {res['sweep']} g={res['gamma_pN']:.1f} D={res['D_Lo_um']:.1f} v={res['reduced_volume_v']:.2f} th={res['theta']:.2f} -> Depth={res['depth_north_um']:+.3f} um")
+                print(
+                    f"Progress: [{completed:3d}/{total:3d}] ({completed/total*100:5.1f}%) | "
+                    f"Elapsed: {elapsed:5.1f}s | Last: {res['sweep']} g={res['gamma_pN']:.1f} "
+                    f"D={res['D_Lo_um']:.1f} v={res['reduced_volume_v']:.2f} th={res['theta']:.2f} "
+                    f"-> Depth={res['depth_north_um']:+.3f} um"
+                )
 
     df = pd.DataFrame(results)
-    
-    # Save partitioned CSVs
+
     df_gamma = df[df["sweep"] == "gamma"].sort_values(["gamma_pN", "theta"])
     df_dlo   = df[df["sweep"] == "D_Lo"].sort_values(["D_Lo_um", "theta"])
     df_v     = df[df["sweep"] == "deflation"].sort_values(["reduced_volume_v", "theta"])
-    
+
     df_gamma.to_csv(os.path.join(out_dir, "trace_gamma_sweep.csv"), index=False)
     df_dlo.to_csv(os.path.join(out_dir, "trace_domain_size_sweep.csv"), index=False)
     df_v.to_csv(os.path.join(out_dir, "trace_deflation_sweep.csv"), index=False)
     df.to_csv(os.path.join(out_dir, "trace_two_domains_all.csv"), index=False)
-    
+
     t_tot = time.time() - t0
     print("=" * 80)
     print(f"TWO-DOMAIN PRODUCTION SWEEPS COMPLETED in {t_tot:.1f} seconds!")
-    print(f"Saved: {os.path.join(out_dir, 'trace_gamma_sweep.csv')}")
-    print(f"Saved: {os.path.join(out_dir, 'trace_domain_size_sweep.csv')}")
-    print(f"Saved: {os.path.join(out_dir, 'trace_deflation_sweep.csv')}")
-    print(f"Saved: {os.path.join(out_dir, 'trace_two_domains_all.csv')}")
     print("=" * 80)
     return df
+
 
 if __name__ == "__main__":
     run_all_two_domain_sweeps()

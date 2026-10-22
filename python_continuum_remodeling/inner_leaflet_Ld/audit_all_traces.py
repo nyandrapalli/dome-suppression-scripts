@@ -1,7 +1,9 @@
+import os
 import pandas as pd
 import numpy as np
 
-f1 = 'simulation_results_prl/param_sweeps/trace_all_single_domain.csv'
+base_dir = os.path.dirname(os.path.abspath(__file__))
+f1 = os.path.join(base_dir, 'results', 'param_sweeps', 'trace_all_single_domain.csv')
 df1 = pd.read_csv(f1)
 print('======================================================================')
 print('              1. AUDIT OF SINGLE-DOMAIN PRODUCTION RESULTS')
@@ -11,13 +13,15 @@ print(f'Optimizer Status (opt_ok):{df1["opt_success"].sum()} / {len(df1)} ({df1[
 print(f'Geom Tolerances (geom_ok):{df1["geom_converged"].sum()} / {len(df1)} ({df1["geom_converged"].mean()*100:.1f}%)')
 print(f'Fully Converged (both):   {df1["converged"].sum()} / {len(df1)} ({df1["converged"].mean()*100:.1f}%)')
 print(f'Max Geometric Error:      {df1["max_geom_error"].max():.2e}')
+if "r_south_pole_um" in df1.columns:
+    print(f'Max |r(S_tot)| South Pole:{df1["r_south_pole_um"].abs().max():.2e} um')
 print(f'Total Energy Range:       {df1["total_energy_kBT"].min():.2f} to {df1["total_energy_kBT"].max():.2f} kBT')
 print(f'ADE Energy Range:         {df1["E_ade"].min():.2f} to {df1["E_ade"].max():.2f} kBT')
 print(f'Line Energy Range:        {df1["E_line"].min():.2f} to {df1["E_line"].max():.2f} kBT')
 print(f'Dimple Depth Range:       {df1["dimple_depth_um"].min():+.3f} to {df1["dimple_depth_um"].max():+.3f} um')
 print(f'Neck Aperture 2*r_b:      {df1["neck_aperture_2rb_um"].min():.3f} to {df1["neck_aperture_2rb_um"].max():.3f} um')
 
-f2 = 'simulation_results_prl/two_domains_sweeps/trace_two_domains_all.csv'
+f2 = os.path.join(base_dir, 'results', 'two_domains_sweeps', 'trace_two_domains_all.csv')
 df2 = pd.read_csv(f2)
 print('\n======================================================================')
 print('              2. AUDIT OF TWO-DOMAIN PRODUCTION RESULTS')
