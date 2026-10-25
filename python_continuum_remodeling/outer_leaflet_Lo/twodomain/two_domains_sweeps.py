@@ -59,6 +59,20 @@ def _solve_two_domain_case(task):
         df_prof["domain"] = dom_tags
         df_prof.to_csv(prof_path, index=False)
 
+        if theta > 0.0 and inw.get("dimple_depth_north", 0.0) < 0.0 and res.get("branch") != "inward":
+            inw_prof_path = os.path.join(out_dir, "profiles", prof_file.replace(".csv", "_inward.csv"))
+            s_inw = inw.get("s_profile", s_prof)
+            df_inw = pd.DataFrame({
+                "s_um": s_inw,
+                "psi_rad": inw["psi_profile"],
+                "r_um": inw["r_profile"],
+                "z_um": inw["z_profile"],
+                "H_um_inv": inw["H_profile"],
+                "K_um_inv2": inw["K_profile"],
+                "domain": dom_tags
+            })
+            df_inw.to_csv(inw_prof_path, index=False)
+
     eff = solver.calc.get_effective_properties(theta)
 
     return {
@@ -154,7 +168,7 @@ def run_all_two_domain_sweeps(out_dir=None, max_workers=None):
                     f"Progress: [{completed:3d}/{total:3d}] ({completed/total*100:5.1f}%) | "
                     f"Elapsed: {elapsed:5.1f}s | Last: {res['sweep']} g={res['gamma_pN']:.1f} "
                     f"D={res['D_Lo_um']:.1f} v={res['reduced_volume_v']:.2f} th={res['theta']:.2f} "
-                    f"-> Elev={res['elevation_north_um']:+.3f} um"
+                    f"-> Depth={res['depth_north_um']:+.3f} um"
                 )
 
     df = pd.DataFrame(results)

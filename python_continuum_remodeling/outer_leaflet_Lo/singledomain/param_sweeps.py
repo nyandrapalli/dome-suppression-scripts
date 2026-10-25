@@ -48,6 +48,19 @@ def _solve_single_case(task):
         df_prof["domain"] = np.where(res["s"] <= res["s_split"] + 1e-12, "Lo", "Ld")
         df_prof.to_csv(prof_path, index=False)
 
+        if theta > 0.0 and inw.get("dimple_depth", 0.0) < 0.0 and res.get("branch") != "inward":
+            inw_prof_path = os.path.join(out_dir, "profiles", prof_file.replace(".csv", "_inward.csv"))
+            df_inw = pd.DataFrame({
+                "s_um": inw["s"],
+                "psi_rad": inw["psi"],
+                "r_um": inw["r"],
+                "z_um": inw["z"],
+                "H_um_inv": inw["H"],
+                "K_um_inv2": inw["K"],
+                "domain": np.where(inw["s"] <= inw["s_split"] + 1e-12, "Lo", "Ld")
+            })
+            df_inw.to_csv(inw_prof_path, index=False)
+
     props = get_effective_properties(params, theta)
 
     return {
@@ -145,7 +158,7 @@ def run_all_single_domain_sweeps(out_dir=None, max_workers=None):
                     f"Progress: [{completed:3d}/{total:3d}] ({completed/total*100:5.1f}%) | "
                     f"Elapsed: {elapsed:5.1f}s | Last: {res['sweep']} g={res['gamma_pN']:.1f} "
                     f"D={res['D_Lo_um']:.1f} v={res['reduced_volume_v']:.2f} th={res['theta']:.2f} "
-                    f"-> Elev={res['cap_elevation_um']:+.3f} um | r_end={res['r_south_pole_um']:+.1e}"
+                    f"-> Depth={res['dimple_depth_um']:+.3f} um | r_end={res['r_south_pole_um']:+.1e}"
                 )
 
     df = pd.DataFrame(results)
