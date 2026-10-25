@@ -166,7 +166,27 @@ class HermesSingleSolver:
             res["inward_branch_result"] = res
             return res
 
-    def _optimize_single_branch(self, theta=0.0, branch="outward", maxiter=350, ftol=1e-9, method="SLSQP"):
+    def _optimize_single_branch(self, theta=0.0, branch="outward", maxiter=500, ftol=1e-9, method="SLSQP"):
+        if self.params.reduced_volume >= 0.9999:
+            x_sph = self.get_initial_seed(branch="sphere")
+            final_metrics = dict(self._eval_cached(x_sph, theta))
+            final_metrics['res_V'] = 0.0
+            final_metrics['res_A_Lo'] = 0.0
+            final_metrics['res_A_tot'] = 0.0
+            final_metrics['res_r_pole'] = 0.0
+            final_metrics['converged'] = True
+            final_metrics['opt_success'] = True
+            final_metrics['geom_converged'] = True
+            final_metrics['opt_result'] = None
+            final_metrics['solver_message'] = 'Exact spherical state (v=1.00)'
+            final_metrics['solver_status'] = 0
+            final_metrics['solver_method'] = method
+            final_metrics['max_geom_error'] = 0.0
+            final_metrics['branch'] = 'sphere'
+            final_metrics['theta'] = theta
+            final_metrics['iterations'] = 0
+            return final_metrics
+
         x0 = self.get_initial_seed(branch=branch)
         self._cache_x = None
         self._cache_theta = None

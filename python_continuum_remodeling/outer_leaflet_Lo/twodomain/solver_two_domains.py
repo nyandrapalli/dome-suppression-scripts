@@ -190,7 +190,48 @@ class TwoDomainHermesSolver:
             res["inward_branch_result"] = res
             return res
 
-    def _optimize_single_branch(self, theta: float = 0.0, branch: str = "outward", maxiter: int = 350, ftol: float = 1e-9) -> dict:
+    def _optimize_single_branch(self, theta: float = 0.0, branch: str = "outward", maxiter: int = 500, ftol: float = 1e-9) -> dict:
+        if self.p.reduced_volume >= 0.9999:
+            x_sph = self.generate_initial_guess("sphere")
+            en_final, m_final = self._eval_cached(x_sph, theta)
+            return {
+                "converged": True,
+                "opt_success": True,
+                "geom_converged": True,
+                "max_geom_error": 0.0,
+                "res_r_pole": 0.0,
+                "moment_residual": m_final.get("moment_residual", 0.0),
+                "total_energy": en_final["E_total"],
+                "E_bend_tot": en_final["E_bend_tot"],
+                "E_bend_Lo_north": en_final["E_bend_Lo_north"],
+                "E_bend_Ld": en_final["E_bend_Ld"],
+                "E_bend_Lo_south": en_final["E_bend_Lo_south"],
+                "E_line": en_final["E_line"],
+                "E_gauss": en_final["E_gauss"],
+                "E_ade": en_final["E_ade"],
+                "dimple_depth_north": m_final["dimple_depth_north"],
+                "dimple_depth_south": m_final["dimple_depth_south"],
+                "elevation_north": m_final["elevation_north"],
+                "elevation_south": m_final["elevation_south"],
+                "peak_to_dimple_Lo_north": m_final["peak_to_dimple_Lo_north"],
+                "peak_to_dimple_crest_north": m_final["peak_to_dimple_crest_north"],
+                "dome_peak_to_dimple_north": m_final["dome_peak_to_dimple_north"],
+                "dome_peak_to_dimple_south": m_final["dome_peak_to_dimple_south"],
+                "r_b1": m_final["r_b1"],
+                "r_b2": m_final["r_b2"],
+                "s_split1": m_final["s_split1"],
+                "s_split2": m_final["s_split2"],
+                "S_tot": m_final["S_tot"],
+                "s_profile": m_final["s"],
+                "psi_profile": m_final["psi"],
+                "r_profile": m_final["r"],
+                "z_profile": m_final["z"],
+                "H_profile": m_final["H"],
+                "K_profile": m_final["K"],
+                "branch": "sphere",
+                "iterations": 0
+            }
+
         x0 = self.generate_initial_guess(branch=branch)
         self._last_x = None
         self._cached_theta = None
@@ -245,6 +286,7 @@ class TwoDomainHermesSolver:
             "geom_converged": geom_converged,
             "max_geom_error": max_geom_err,
             "res_r_pole": res_r_pole,
+            "moment_residual": m_final.get("moment_residual", 0.0),
             "total_energy": en_final["E_total"],
             "E_bend_tot": en_final["E_bend_tot"],
             "E_bend_Lo_north": en_final["E_bend_Lo_north"],

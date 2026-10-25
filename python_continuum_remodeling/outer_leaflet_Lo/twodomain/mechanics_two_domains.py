@@ -243,6 +243,12 @@ class TwoDomainEnergyCalculator:
 
         E_total = E_bend_tot + E_line + E_gauss + E_ade + E_axis_barrier
 
+        # One-sided Jülicher-Lipowsky boundary moment jump residual at North interface
+        M_Lo1 = kappa_Lo * (2.0 * H1[-1] - c0_Lo)
+        M_Ld1 = kappa_Ld * (2.0 * H2[0] - c0_Ld)
+        expected_moment_jump = delta_kappa_G * (np.cos(psi_b1) / (r_b1 + 1e-8))
+        moment_residual = float((M_Lo1 - M_Ld1) - expected_moment_jump)
+
         # Combined arrays
         s_grid = np.concatenate([s_Lo1, s_Ld[1:], s_Lo2[1:]])
         psi_grid = np.concatenate([psi_Lo1, psi_Ld[1:], psi_Lo2[1:]])
@@ -284,6 +290,7 @@ class TwoDomainEnergyCalculator:
             "s_split2": float(s_Lo2[0]),
             "S_tot": float(s_Lo2[-1]),
             "min_r_interior": min_r_interior,
+            "moment_residual": moment_residual,
             "dimple_depth_north": dimple_depth_north,
             "dimple_depth_south": dimple_depth_south,
             "elevation_north": elevation_north,

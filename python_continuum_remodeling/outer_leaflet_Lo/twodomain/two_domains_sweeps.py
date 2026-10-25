@@ -113,6 +113,7 @@ def _solve_two_domain_case(task):
         "opt_success": res["opt_success"],
         "geom_converged": res["geom_converged"],
         "max_geom_error": res["max_geom_error"],
+        "moment_residual": res.get("moment_residual", 0.0),
         "iterations": res["iterations"],
         "profile_file": prof_file
     }

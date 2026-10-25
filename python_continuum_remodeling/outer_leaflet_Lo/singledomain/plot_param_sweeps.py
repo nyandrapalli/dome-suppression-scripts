@@ -17,7 +17,9 @@ def _find_profile(profiles_dir, names):
             return p
     return None
 
-def plot_param_sweeps(results_dir="HermesLoouter/single"):
+def plot_param_sweeps(results_dir=None):
+    if results_dir is None:
+        results_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "results", "single")
     profiles_dir = os.path.join(results_dir, "profiles")
     out_fig = os.path.join(results_dir, "fig_single_domain_sweeps.png")
     

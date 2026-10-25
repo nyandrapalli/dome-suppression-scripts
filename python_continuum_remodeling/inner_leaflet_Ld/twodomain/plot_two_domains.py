@@ -23,7 +23,9 @@ def _find_profile(profiles_dir, names):
             return p
     return None
 
-def plot_two_domains_sweeps(results_dir="simulation_results_prl/two_domains_sweeps"):
+def plot_two_domains_sweeps(results_dir=None):
+    if results_dir is None:
+        results_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "results", "two_domains_sweeps")
     profiles_dir = os.path.join(results_dir, "profiles")
     out_fig = os.path.join(results_dir, "fig_two_domains_comprehensive.png")
     

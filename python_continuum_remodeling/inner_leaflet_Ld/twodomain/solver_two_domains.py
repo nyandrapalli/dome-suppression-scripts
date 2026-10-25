@@ -221,7 +221,53 @@ class TwoDomainVesicleSolver:
             res["inward_branch_result"] = res
             return res
 
-    def _optimize_single_branch(self, theta: float, branch: str = "inward", maxiter: int = 400, ftol: float = 1e-9):
+    def _optimize_single_branch(self, theta: float, branch: str = "inward", maxiter: int = 500, ftol: float = 1e-9):
+        if self.p.reduced_volume >= 0.9999:
+            x_sph = self.generate_initial_guess("sphere")
+            final_en, m = self._eval_cached(x_sph, theta)
+            return {
+                "converged": True,
+                "opt_success": True,
+                "geom_converged": True,
+                "opt_result": None,
+                "max_geom_error": 0.0,
+                "res_V": 0.0,
+                "res_A_Lo1": 0.0,
+                "res_A_Lo2": 0.0,
+                "res_A_tot": 0.0,
+                "res_r_pole": 0.0,
+                "moment_residual": m.get("moment_residual", 0.0),
+                "total_energy": final_en["E_total"],
+                "E_bend_tot": final_en["E_bend_tot"],
+                "E_bend_Lo_north": final_en["E_bend_Lo_north"],
+                "E_bend_Ld": final_en["E_bend_Ld"],
+                "E_bend_Lo_south": final_en["E_bend_Lo_south"],
+                "E_line": final_en["E_line"],
+                "E_gauss": final_en["E_gauss"],
+                "E_ade": final_en["E_ade"],
+                "dimple_depth_north": m["dimple_depth_north"],
+                "dimple_depth_south": m["dimple_depth_south"],
+                "peak_to_dimple_Lo_north": m["peak_to_dimple_Lo_north"],
+                "peak_to_dimple_crest_north": m["peak_to_dimple_crest_north"],
+                "dome_peak_to_dimple_north": m["dome_peak_to_dimple_north"],
+                "dome_peak_to_dimple_south": m["dome_peak_to_dimple_south"],
+                "r_b1": m["r_b1"],
+                "r_b2": m["r_b2"],
+                "z_b1": m["z_b1"],
+                "z_b2": m["z_b2"],
+                "s_split1": m["s_split1"],
+                "s_split2": m["s_split2"],
+                "S_tot": m["S_tot"],
+                "s_profile": m["s"],
+                "r_profile": m["r"],
+                "z_profile": m["z"],
+                "psi_profile": m["psi"],
+                "H_profile": m["H"],
+                "K_profile": m["K"],
+                "branch": "sphere",
+                "iterations": 0
+            }
+
         self._last_x = None
         self._cached_theta = None
         self._cached_metrics = None
@@ -288,6 +334,7 @@ class TwoDomainVesicleSolver:
             "res_A_Lo2": res_A_Lo,
             "res_A_tot": res_A_tot,
             "res_r_pole": res_r_pole,
+            "moment_residual": m.get("moment_residual", 0.0),
             "total_energy": final_en["E_total"],
             "E_bend_tot": final_en["E_bend_tot"],
             "E_bend_Lo_north": final_en["E_bend_Lo_north"],

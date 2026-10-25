@@ -17,7 +17,9 @@ def _find_profile(profiles_dir, names):
             return p
     return None
 
-def plot_two_domains(results_dir="HermesLoouter/double"):
+def plot_two_domains(results_dir=None):
+    if results_dir is None:
+        results_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "results", "double")
     profiles_dir = os.path.join(results_dir, "profiles")
     out_fig = os.path.join(results_dir, "fig_two_domains_sweeps.png")
     
@@ -36,6 +38,19 @@ def plot_two_domains(results_dir="HermesLoouter/double"):
     
     fig = plt.figure(figsize=(18, 14))
     gs = GridSpec(3, 4, figure=fig, hspace=0.32, wspace=0.25)
+
+    def _plot_bipolar(ax, df, add_legend=False):
+        r, z, dom = df["r_um"].values, df["z_um"].values, df["domain"].values
+        z_aligned = z - 0.5 * (np.max(z) + np.min(z))
+        idx_b1 = int(np.where(dom == "Lo_north")[0][-1])
+        idx_b2 = int(np.where(dom == "Lo_south")[0][0])
+
+        ax.plot(-r[idx_b1:idx_b2+1][::-1], z_aligned[idx_b1:idx_b2+1][::-1], color=color_Ld, linewidth=2.5, label=r"$L_d$ Belt (Bare)" if add_legend else "")
+        ax.plot(r[idx_b1:idx_b2+1], z_aligned[idx_b1:idx_b2+1], color=color_Ld, linewidth=2.5)
+        ax.plot(np.concatenate([-r[:idx_b1+1][::-1], r[:idx_b1+1]]), np.concatenate([z_aligned[:idx_b1+1][::-1], z_aligned[:idx_b1+1]]), color=color_Lo, linewidth=3.5, label=r"$L_o$ Caps (Outer Prot)" if add_legend else "")
+        ax.plot(np.concatenate([-r[idx_b2:][::-1], r[idx_b2:]]), np.concatenate([z_aligned[idx_b2:][::-1], z_aligned[idx_b2:]]), color=color_Lo, linewidth=3.5)
+        ax.plot([-r[idx_b1], r[idx_b1]], [z_aligned[idx_b1], z_aligned[idx_b1]], "ko", markersize=4.5)
+        ax.plot([-r[idx_b2], r[idx_b2]], [z_aligned[idx_b2], z_aligned[idx_b2]], "ko", markersize=4.5)
     
     # 1. Line Tension Sweep
     gamma_vals = [0.5, 1.5, 3.0, 5.0]
@@ -44,20 +59,7 @@ def plot_two_domains(results_dir="HermesLoouter/double"):
         prof_path = _find_profile(profiles_dir, [f"prof_two_dom_gamma_{gamma:.1f}_theta_1.00.csv"])
         if prof_path:
             df = pd.read_csv(prof_path)
-            r, z, dom = df["r_um"].values, df["z_um"].values, df["domain"].values
-            z_aligned = z - 0.5 * (np.max(z) + np.min(z))
-            
-            mask_n = (dom == "Lo_north")
-            mask_s = (dom == "Lo_south")
-            mask_ld = (dom == "Ld")
-            
-            # Plot Ld equatorial belt
-            ax.plot(-r[mask_ld][::-1], z_aligned[mask_ld][::-1], color=color_Ld, linewidth=2.5, label=r"$L_d$ Belt (Bare)" if col_idx == 0 else "")
-            ax.plot(r[mask_ld], z_aligned[mask_ld], color=color_Ld, linewidth=2.5)
-            
-            # Plot Lo caps
-            ax.plot(np.concatenate([-r[mask_n][::-1], r[mask_n]]), np.concatenate([z_aligned[mask_n][::-1], z_aligned[mask_n]]), color=color_Lo, linewidth=3.5, label=r"$L_o$ Caps (Outer Prot)" if col_idx == 0 else "")
-            ax.plot(np.concatenate([-r[mask_s][::-1], r[mask_s]]), np.concatenate([z_aligned[mask_s][::-1], z_aligned[mask_s]]), color=color_Lo, linewidth=3.5)
+            _plot_bipolar(ax, df, add_legend=(col_idx == 0))
             
         ax.axvline(0, color="gray", linestyle=":", linewidth=0.8, alpha=0.7)
         ax.set_title(f"(a{col_idx+1}) $\\gamma = {gamma:.1f}\\,\\mathrm{{pN}}$ ($\\theta=1.0$)", fontweight="bold", pad=4)
@@ -76,17 +78,7 @@ def plot_two_domains(results_dir="HermesLoouter/double"):
         prof_path = _find_profile(profiles_dir, [f"prof_two_dom_DLo_{d_lo:.1f}_theta_1.00.csv"])
         if prof_path:
             df = pd.read_csv(prof_path)
-            r, z, dom = df["r_um"].values, df["z_um"].values, df["domain"].values
-            z_aligned = z - 0.5 * (np.max(z) + np.min(z))
-            
-            mask_n = (dom == "Lo_north")
-            mask_s = (dom == "Lo_south")
-            mask_ld = (dom == "Ld")
-            
-            ax.plot(-r[mask_ld][::-1], z_aligned[mask_ld][::-1], color=color_Ld, linewidth=2.5)
-            ax.plot(r[mask_ld], z_aligned[mask_ld], color=color_Ld, linewidth=2.5)
-            ax.plot(np.concatenate([-r[mask_n][::-1], r[mask_n]]), np.concatenate([z_aligned[mask_n][::-1], z_aligned[mask_n]]), color=color_Lo, linewidth=3.5)
-            ax.plot(np.concatenate([-r[mask_s][::-1], r[mask_s]]), np.concatenate([z_aligned[mask_s][::-1], z_aligned[mask_s]]), color=color_Lo, linewidth=3.5)
+            _plot_bipolar(ax, df)
             
         ax.axvline(0, color="gray", linestyle=":", linewidth=0.8, alpha=0.7)
         ax.set_title(f"(b{col_idx+1}) $D_{{Lo}} = {d_lo:.1f}\\,\\mu\\mathrm{{m}}$ ($\\theta=1.0$)", fontweight="bold", pad=4)
@@ -103,17 +95,7 @@ def plot_two_domains(results_dir="HermesLoouter/double"):
         prof_path = _find_profile(profiles_dir, [f"prof_two_dom_v_{v_val:.2f}_theta_1.00.csv"])
         if prof_path:
             df = pd.read_csv(prof_path)
-            r, z, dom = df["r_um"].values, df["z_um"].values, df["domain"].values
-            z_aligned = z - 0.5 * (np.max(z) + np.min(z))
-            
-            mask_n = (dom == "Lo_north")
-            mask_s = (dom == "Lo_south")
-            mask_ld = (dom == "Ld")
-            
-            ax.plot(-r[mask_ld][::-1], z_aligned[mask_ld][::-1], color=color_Ld, linewidth=2.5)
-            ax.plot(r[mask_ld], z_aligned[mask_ld], color=color_Ld, linewidth=2.5)
-            ax.plot(np.concatenate([-r[mask_n][::-1], r[mask_n]]), np.concatenate([z_aligned[mask_n][::-1], z_aligned[mask_n]]), color=color_Lo, linewidth=3.5)
-            ax.plot(np.concatenate([-r[mask_s][::-1], r[mask_s]]), np.concatenate([z_aligned[mask_s][::-1], z_aligned[mask_s]]), color=color_Lo, linewidth=3.5)
+            _plot_bipolar(ax, df)
             
         ax.axvline(0, color="gray", linestyle=":", linewidth=0.8, alpha=0.7)
         ax.set_title(f"(c{col_idx+1}) $v = {v_val:.2f}$ ($\\theta=1.0$)", fontweight="bold", pad=4)

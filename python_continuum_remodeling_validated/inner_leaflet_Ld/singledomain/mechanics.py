@@ -333,8 +333,8 @@ def compute_energy_breakdown_piecewise(s_Lo, psi_Lo, c1_Lo, s_Ld, psi_Ld, c1_Ld,
 
 def compute_energy_breakdown(s_grid, psi_grid, s_split, params, theta):
     """
-    Backward-compatible energy breakdown entry point for a single combined s_grid.
-    Splits s_grid at s_split and delegates to compute_energy_breakdown_piecewise.
+    DEPRECATED: Backward-compatible finite-difference energy breakdown entry point for a single combined s_grid.
+    Prefer `compute_energy_breakdown_piecewise` with analytical cubic-spline derivatives c1_Lo, c1_Ld.
     """
     mask_Lo = (s_grid <= s_split + 1e-12)
     idx_b = int(np.where(mask_Lo)[0][-1])
