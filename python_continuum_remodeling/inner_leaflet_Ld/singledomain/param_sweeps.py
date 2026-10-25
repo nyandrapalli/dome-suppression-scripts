@@ -41,6 +41,7 @@ def _solve_single_case(task):
 
     branch = "sphere" if theta == 0.0 else "auto"
     res = solver.optimize_shape(theta=theta, branch=branch, maxiter=350, ftol=1e-9)
+    inw = res.get("inward_branch_result", res)
 
     if prof_file:
         prof_path = os.path.join(out_dir, "profiles", prof_file)
@@ -56,6 +57,19 @@ def _solve_single_case(task):
         df_prof["domain"] = np.where(solver.s_grid <= solver.s_split + 1e-12, "Lo", "Ld")
         df_prof.to_csv(prof_path, index=False)
 
+        if theta > 0.0 and inw.get("dimple_depth", 0.0) < 0.0 and res.get("branch") != "inward":
+            inw_prof_path = os.path.join(out_dir, "profiles", prof_file.replace(".csv", "_inward.csv"))
+            df_inw = pd.DataFrame({
+                "s_um": solver.s_grid,
+                "psi_rad": inw["psi"],
+                "r_um": inw["r"],
+                "z_um": inw["z"],
+                "H_um_inv": inw["H"],
+                "K_um_inv2": inw["K"],
+                "domain": np.where(solver.s_grid <= solver.s_split + 1e-12, "Lo", "Ld")
+            })
+            df_inw.to_csv(inw_prof_path, index=False)
+
     return {
         "sweep": sweep_name,
         "gamma_pN": gamma_pN,
@@ -64,6 +78,14 @@ def _solve_single_case(task):
         "theta": theta,
         "branch": res.get("branch", branch),
         "dimple_depth_um": res["dimple_depth"],
+        "dome_peak_to_dimple_um": res["dome_peak_to_dimple"],
+        "peak_to_dimple_crest_um": res["peak_to_dimple_crest"],
+        "inward_d_raw_um": inw["dimple_depth"],
+        "inward_dome_peak_to_dimple_um": inw["dome_peak_to_dimple"],
+        "inward_peak_to_dimple_crest_um": inw["peak_to_dimple_crest"],
+        "inward_total_energy_kBT": inw["total_energy"],
+        "inward_converged": inw["converged"],
+        "delta_E_inward_vs_auto_kBT": inw["total_energy"] - res["total_energy"],
         "r_b_um": res["r_b"],
         "neck_aperture_2rb_um": 2.0 * res["r_b"],
         "r_south_pole_um": float(res["r"][-1]),
@@ -142,6 +164,13 @@ def run_all_single_domain_sweeps(out_dir=None, max_workers=None):
                 )
 
     df = pd.DataFrame(results)
+
+    # Compute stroke from theta=0 dome peak for both global-minimum and inward branches
+    grp_cols = ["sweep", "gamma_pN", "D_Lo_um", "reduced_volume_v"]
+    base_d0 = df[df["theta"] == 0.0][grp_cols + ["dimple_depth_um"]].rename(columns={"dimple_depth_um": "d_theta0_um"})
+    df = pd.merge(df, base_d0, on=grp_cols, how="left")
+    df["stroke_from_theta0_dome_um"] = df["dimple_depth_um"] - df["d_theta0_um"]
+    df["inward_stroke_from_theta0_dome_um"] = df["inward_d_raw_um"] - df["d_theta0_um"]
 
     df_gamma = df[df["sweep"] == "gamma"].sort_values(["gamma_pN", "theta"])
     df_dlo   = df[df["sweep"] == "D_Lo"].sort_values(["D_Lo_um", "theta"])

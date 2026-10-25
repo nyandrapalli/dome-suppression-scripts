@@ -287,6 +287,11 @@ def compute_energy_breakdown_piecewise(s_Lo, psi_Lo, c1_Lo, s_Ld, psi_Ld, c1_Ld,
 
     dimple_depth = float(z_Lo[0] - z_b)
     cap_elevation = float(z_b - z_Lo[0])
+    z_peak_Lo = float(np.max(z_Lo))
+    z_peak_north = float(np.max(z[:len(z) // 2]))
+    peak_to_dimple_Lo = float(z_Lo[0] - z_peak_Lo)
+    peak_to_dimple_crest = float(z_Lo[0] - z_peak_north)
+    dome_peak_to_dimple = peak_to_dimple_crest if z_peak_north > z_Lo[0] + 1e-5 else dimple_depth
 
     return {
         'total_energy': total_physical_energy,
@@ -307,6 +312,9 @@ def compute_energy_breakdown_piecewise(s_Lo, psi_Lo, c1_Lo, s_Ld, psi_Ld, c1_Ld,
         'S_tot': float(s_Ld[-1]),
         'dimple_depth': dimple_depth,
         'cap_elevation': cap_elevation,
+        'peak_to_dimple_Lo': peak_to_dimple_Lo,
+        'peak_to_dimple_crest': peak_to_dimple_crest,
+        'dome_peak_to_dimple': dome_peak_to_dimple,
         'res_V': res_V,
         'res_A_Lo': res_A_Lo,
         'res_A_tot': res_A_tot,

@@ -145,15 +145,22 @@ class PRLVesicleSolver:
         if branch == "auto":
             branches_to_try = ["inward", "sphere", "outward"] if theta > 0 else ["sphere"]
             best_res = None
+            inward_res = None
             for b in branches_to_try:
                 res = self._optimize_single_branch(theta=theta, branch=b, maxiter=maxiter, ftol=ftol, method=method)
+                if b == "inward":
+                    inward_res = res
                 if best_res is None or (res['converged'] and (not best_res['converged'] or res['total_energy'] < best_res['total_energy'])):
                     best_res = res
                 elif not best_res['converged'] and res['opt_success'] and res['total_energy'] < best_res['total_energy']:
                     best_res = res
+            best_res = dict(best_res)
+            best_res["inward_branch_result"] = inward_res if inward_res is not None else best_res
             return best_res
         else:
-            return self._optimize_single_branch(theta=theta, branch=branch, maxiter=maxiter, ftol=ftol, method=method)
+            res = self._optimize_single_branch(theta=theta, branch=branch, maxiter=maxiter, ftol=ftol, method=method)
+            res["inward_branch_result"] = res
+            return res
 
     def _optimize_single_branch(self, theta=0.0, branch="inward", maxiter=350, ftol=1e-9, method="SLSQP"):
         x0 = self.get_initial_seed(branch=branch)

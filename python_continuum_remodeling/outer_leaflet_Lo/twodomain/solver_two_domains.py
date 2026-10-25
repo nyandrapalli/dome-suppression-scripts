@@ -160,15 +160,22 @@ class TwoDomainHermesSolver:
         if branch == "auto":
             branches_to_try = ["outward", "sphere", "inward"] if theta > 0 else ["sphere"]
             best_res = None
+            inward_res = None
             for b in branches_to_try:
                 res = self._optimize_single_branch(theta, branch=b, maxiter=maxiter, ftol=ftol)
+                if b == "inward":
+                    inward_res = res
                 if best_res is None or (res['converged'] and (not best_res['converged'] or res['total_energy'] < best_res['total_energy'])):
                     best_res = res
                 elif not best_res['converged'] and res['opt_success'] and res['total_energy'] < best_res['total_energy']:
                     best_res = res
+            best_res = dict(best_res)
+            best_res["inward_branch_result"] = inward_res if inward_res is not None else best_res
             return best_res
         else:
-            return self._optimize_single_branch(theta, branch=branch, maxiter=maxiter, ftol=ftol)
+            res = self._optimize_single_branch(theta, branch=branch, maxiter=maxiter, ftol=ftol)
+            res["inward_branch_result"] = res
+            return res
 
     def _optimize_single_branch(self, theta: float = 0.0, branch: str = "outward", maxiter: int = 350, ftol: float = 1e-9) -> dict:
         x0 = self.generate_initial_guess(branch=branch)
@@ -234,6 +241,10 @@ class TwoDomainHermesSolver:
             "dimple_depth_south": m_final["dimple_depth_south"],
             "elevation_north": m_final["elevation_north"],
             "elevation_south": m_final["elevation_south"],
+            "peak_to_dimple_Lo_north": m_final["peak_to_dimple_Lo_north"],
+            "peak_to_dimple_crest_north": m_final["peak_to_dimple_crest_north"],
+            "dome_peak_to_dimple_north": m_final["dome_peak_to_dimple_north"],
+            "dome_peak_to_dimple_south": m_final["dome_peak_to_dimple_south"],
             "r_b1": m_final["r_b1"],
             "r_b2": m_final["r_b2"],
             "psi_profile": m_final["psi"],

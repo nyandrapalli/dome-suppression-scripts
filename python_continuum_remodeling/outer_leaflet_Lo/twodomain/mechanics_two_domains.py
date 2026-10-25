@@ -193,6 +193,14 @@ class TwoDomainEnergyCalculator:
         elevation_north = float(z_b1 - z1[0])
         elevation_south = float(z3[-1] - z_b2)
 
+        z_north_hem = np.concatenate([z1, z2[1:len(z2) // 2 + 1]])
+        z_peak_Lo_north = float(np.max(z1))
+        z_peak_north = float(np.max(z_north_hem))
+        peak_to_dimple_Lo_north = float(z1[0] - z_peak_Lo_north)
+        peak_to_dimple_crest_north = float(z1[0] - z_peak_north)
+        dome_peak_to_dimple_north = peak_to_dimple_crest_north if z_peak_north > z1[0] + 1e-5 else dimple_depth_north
+        dome_peak_to_dimple_south = dome_peak_to_dimple_north
+
         # 1. Helfrich Bending Energy
         kappa_Lo, kappa_Ld = eff["kappa_Lo"], eff["kappa_Ld"]
         c0_Lo, c0_Ld = eff["c0_Lo"], eff["c0_Ld"]
@@ -278,7 +286,11 @@ class TwoDomainEnergyCalculator:
             "dimple_depth_north": dimple_depth_north,
             "dimple_depth_south": dimple_depth_south,
             "elevation_north": elevation_north,
-            "elevation_south": elevation_south
+            "elevation_south": elevation_south,
+            "peak_to_dimple_Lo_north": peak_to_dimple_Lo_north,
+            "peak_to_dimple_crest_north": peak_to_dimple_crest_north,
+            "dome_peak_to_dimple_north": dome_peak_to_dimple_north,
+            "dome_peak_to_dimple_south": dome_peak_to_dimple_south
         }
 
         return {

@@ -74,6 +74,10 @@ def run_smoke_test(output_dir=None):
             "z_b_um": res["z_b"],
             "psi_b_rad": res["psi_b"],
             "dimple_depth_um": res["dimple_depth"],
+            "dome_peak_to_dimple_um": res["dome_peak_to_dimple"],
+            "peak_to_dimple_crest_um": res["peak_to_dimple_crest"],
+            "inward_d_raw_um": res.get("inward_branch_result", res)["dimple_depth"],
+            "inward_dome_peak_to_dimple_um": res.get("inward_branch_result", res)["dome_peak_to_dimple"],
             "moment_residual": res["moment_residual"],
             "iterations": res["iterations"]
         }
@@ -81,10 +85,13 @@ def run_smoke_test(output_dir=None):
         print(
             f"  -> Converged: {res['converged']} | Total E: {res['total_energy']:.2f} kBT | "
             f"Max Geom Err: {res['max_geom_error']:.2e} | r(S_tot): {res['r'][-1]:+.2e} um | "
-            f"Dimple Depth: {res['dimple_depth']:+.3f} um | Moment Res: {res['moment_residual']:+.2f}"
+            f"Raw Depth: {res['dimple_depth']:+.3f} um | Peak-to-Dimple: {res['dome_peak_to_dimple']:+.3f} um | Moment Res: {res['moment_residual']:+.2f}"
         )
 
     df = pd.DataFrame(results)
+    d0 = float(df[(df["theta"] == 0.0) & (df["requested_branch"] == "sphere")]["dimple_depth_um"].iloc[0])
+    df["stroke_from_theta0_dome_um"] = df["dimple_depth_um"] - d0
+    df["inward_stroke_from_theta0_dome_um"] = df["inward_d_raw_um"] - d0
     out_csv = os.path.join(output_dir, "smoke_test_prl.csv")
     df.to_csv(out_csv, index=False)
     print("=" * 80)

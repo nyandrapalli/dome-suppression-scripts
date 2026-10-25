@@ -41,18 +41,11 @@ def _solve_two_domain_case(task):
 
     branch = "sphere" if theta == 0.0 else "auto"
     res = solver.optimize_shape(theta=theta, branch=branch, maxiter=350, ftol=1e-9)
+    inw = res.get("inward_branch_result", res)
 
     if prof_file:
         prof_path = os.path.join(out_dir, "profiles", prof_file)
         os.makedirs(os.path.dirname(prof_path), exist_ok=True)
-        df_prof = pd.DataFrame({
-            "s_um": solver.s_grid,
-            "psi_rad": res["psi_profile"],
-            "r_um": res["r_profile"],
-            "z_um": res["z_profile"],
-            "H_um_inv": res["H_profile"],
-            "K_um_inv2": res["K_profile"]
-        })
         dom_tags = []
         for s_val in solver.s_grid:
             if s_val <= solver.s_split1 + 1e-12:
@@ -61,8 +54,29 @@ def _solve_two_domain_case(task):
                 dom_tags.append("Lo_south")
             else:
                 dom_tags.append("Ld")
-        df_prof["domain"] = dom_tags
+        df_prof = pd.DataFrame({
+            "s_um": solver.s_grid,
+            "psi_rad": res["psi_profile"],
+            "r_um": res["r_profile"],
+            "z_um": res["z_profile"],
+            "H_um_inv": res["H_profile"],
+            "K_um_inv2": res["K_profile"],
+            "domain": dom_tags
+        })
         df_prof.to_csv(prof_path, index=False)
+
+        if theta > 0.0 and inw.get("dimple_depth_north", 0.0) < 0.0 and res.get("branch") != "inward":
+            inw_prof_path = os.path.join(out_dir, "profiles", prof_file.replace(".csv", "_inward.csv"))
+            df_inw = pd.DataFrame({
+                "s_um": solver.s_grid,
+                "psi_rad": inw["psi_profile"],
+                "r_um": inw["r_profile"],
+                "z_um": inw["z_profile"],
+                "H_um_inv": inw["H_profile"],
+                "K_um_inv2": inw["K_profile"],
+                "domain": dom_tags
+            })
+            df_inw.to_csv(inw_prof_path, index=False)
 
     return {
         "sweep": sweep_name,
@@ -73,6 +87,14 @@ def _solve_two_domain_case(task):
         "branch": res.get("branch", branch),
         "depth_north_um": res["dimple_depth_north"],
         "depth_south_um": res["dimple_depth_south"],
+        "dome_peak_to_dimple_north_um": res["dome_peak_to_dimple_north"],
+        "peak_to_dimple_crest_north_um": res["peak_to_dimple_crest_north"],
+        "inward_d_raw_north_um": inw["dimple_depth_north"],
+        "inward_dome_peak_to_dimple_north_um": inw["dome_peak_to_dimple_north"],
+        "inward_peak_to_dimple_crest_north_um": inw["peak_to_dimple_crest_north"],
+        "inward_total_energy_kBT": inw["total_energy"],
+        "inward_converged": inw["converged"],
+        "delta_E_inward_vs_auto_kBT": inw["total_energy"] - res["total_energy"],
         "r_b1_um": res["r_b1"],
         "r_b2_um": res["r_b2"],
         "neck_aperture_2rb_um": 2.0 * res["r_b1"],
@@ -147,6 +169,12 @@ def run_all_two_domain_sweeps(out_dir=None, max_workers=None):
                 )
 
     df = pd.DataFrame(results)
+
+    grp_cols = ["sweep", "gamma_pN", "D_Lo_um", "reduced_volume_v"]
+    base_d0 = df[df["theta"] == 0.0][grp_cols + ["depth_north_um"]].rename(columns={"depth_north_um": "d_theta0_north_um"})
+    df = pd.merge(df, base_d0, on=grp_cols, how="left")
+    df["stroke_from_theta0_dome_north_um"] = df["depth_north_um"] - df["d_theta0_north_um"]
+    df["inward_stroke_from_theta0_dome_north_um"] = df["inward_d_raw_north_um"] - df["d_theta0_north_um"]
 
     df_gamma = df[df["sweep"] == "gamma"].sort_values(["gamma_pN", "theta"])
     df_dlo   = df[df["sweep"] == "D_Lo"].sort_values(["D_Lo_um", "theta"])
