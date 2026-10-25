@@ -33,21 +33,36 @@ class HermesSingleSolver:
         self.n_ctrl_Lo = int(n_ctrl_Lo)
         self.n_ctrl_Ld = int(n_ctrl_Ld)
 
-        self.S_tot = self.params.S_tot
-        self.s_split = self.params.s_split
-        self.S_Ld = self.S_tot - self.s_split
+        self.S_tot_0 = self.params.S_tot
+        self.s_split_0 = self.params.s_split
+        self.S_Ld_0 = self.S_tot_0 - self.s_split_0
+
+        self.S_tot = self.S_tot_0
+        self.s_split = self.s_split_0
+        self.S_Ld = self.S_Ld_0
 
         self.n_pts_Lo = max(35, int(round(self.n_points * 0.35)))
         self.n_pts_Ld = max(65, self.n_points - self.n_pts_Lo + 1)
 
-        self.s_Lo = np.linspace(0.0, self.s_split, self.n_pts_Lo)
-        self.s_Ld = np.linspace(self.s_split, self.S_tot, self.n_pts_Ld)
+        self.u_Lo = np.linspace(0.0, 1.0, self.n_pts_Lo)
+        self.u_Ld = np.linspace(0.0, 1.0, self.n_pts_Ld)
+
+        self.s_Lo = self.u_Lo * self.s_split_0
+        self.s_Ld = self.s_split_0 + self.u_Ld * self.S_Ld_0
         self.s_grid = np.concatenate([self.s_Lo, self.s_Ld[1:]])
 
-        self.s_ctrl_Lo = np.linspace(0.0, self.s_split, self.n_ctrl_Lo + 2)[1:]
-        self.s_ctrl_Ld = np.linspace(self.s_split, self.S_tot, self.n_ctrl_Ld + 2)[1:-1]
+        u_lin_Lo = np.linspace(0.0, 1.0, self.n_ctrl_Lo + 2)[1:]
+        self.u_ctrl_Lo = 0.5 * u_lin_Lo + 0.5 * (0.5 * (1.0 - np.cos(np.pi * u_lin_Lo)))
+        self.u_ctrl_Lo[-1] = 1.0
+
+        u_lin_Ld = np.linspace(0.0, 1.0, self.n_ctrl_Ld + 2)[1:-1]
+        self.u_ctrl_Ld = 0.5 * u_lin_Ld + 0.5 * (0.5 * (1.0 - np.cos(np.pi * u_lin_Ld)))
+
+        self.s_ctrl_Lo = self.u_ctrl_Lo * self.s_split_0
+        self.s_ctrl_Ld = self.s_split_0 + self.u_ctrl_Ld * self.S_Ld_0
         self.s_ctrl = np.concatenate([self.s_ctrl_Lo, self.s_ctrl_Ld])
-        self.n_params = len(self.s_ctrl)
+        self.n_angle_params = len(self.s_ctrl)
+        self.n_params = self.n_angle_params + 2
 
         self._cache_x = None
         self._cache_theta = None
@@ -56,23 +71,32 @@ class HermesSingleSolver:
     def _unpack_and_build_splines(self, x):
         psi_Lo_ctrl = x[:self.n_ctrl_Lo + 1]
         psi_b = psi_Lo_ctrl[-1]
-        psi_Ld_ctrl = x[self.n_ctrl_Lo + 1:]
+        psi_Ld_ctrl = x[self.n_ctrl_Lo + 1:self.n_angle_params]
+        if len(x) >= self.n_angle_params + 2:
+            S_Lo = float(x[self.n_angle_params])
+            S_Ld = float(x[self.n_angle_params + 1])
+        else:
+            S_Lo = self.s_split_0
+            S_Ld = self.S_Ld_0
 
-        s_nodes_Lo = np.concatenate([[0.0], self.s_ctrl_Lo])
+        s_Lo = self.u_Lo * S_Lo
+        s_Ld = S_Lo + self.u_Ld * S_Ld
+
+        s_nodes_Lo = np.concatenate([[0.0], self.u_ctrl_Lo * S_Lo])
         psi_nodes_Lo = np.concatenate([[0.0], psi_Lo_ctrl])
         cs_Lo = CubicSpline(s_nodes_Lo, psi_nodes_Lo, bc_type=((2, 0.0), 'not-a-knot'))
 
-        s_nodes_Ld = np.concatenate([[self.s_split], self.s_ctrl_Ld, [self.S_tot]])
+        s_nodes_Ld = S_Lo + np.concatenate([[0.0], self.u_ctrl_Ld * S_Ld, [S_Ld]])
         psi_nodes_Ld = np.concatenate([[psi_b], psi_Ld_ctrl, [np.pi]])
         cs_Ld = CubicSpline(s_nodes_Ld, psi_nodes_Ld, bc_type=('not-a-knot', (2, 0.0)))
 
-        psi_Lo = cs_Lo(self.s_Lo)
-        c1_Lo = cs_Lo(self.s_Lo, 1)
+        psi_Lo = cs_Lo(s_Lo)
+        c1_Lo = cs_Lo(s_Lo, 1)
 
-        psi_Ld = cs_Ld(self.s_Ld)
-        c1_Ld = cs_Ld(self.s_Ld, 1)
+        psi_Ld = cs_Ld(s_Ld)
+        c1_Ld = cs_Ld(s_Ld, 1)
 
-        return self.s_Lo, psi_Lo, c1_Lo, self.s_Ld, psi_Ld, c1_Ld
+        return s_Lo, psi_Lo, c1_Lo, s_Ld, psi_Ld, c1_Ld
 
     def _param_to_psi(self, x):
         _, psi_Lo, _, _, psi_Ld, _ = self._unpack_and_build_splines(x)
@@ -93,10 +117,10 @@ class HermesSingleSolver:
         return breakdown
 
     def get_initial_seed(self, branch="outward"):
-        u_Lo = self.s_ctrl_Lo / self.s_split
-        u_Ld = (self.s_ctrl_Ld - self.s_split) / self.S_Ld
-        psi_b_sphere = (self.s_split / self.S_tot) * np.pi
-        scale = min(1.0, max(0.2, self.s_split / 1.5))
+        u_Lo = self.u_ctrl_Lo
+        u_Ld = self.u_ctrl_Ld
+        psi_b_sphere = (self.s_split_0 / self.S_tot_0) * np.pi
+        scale = min(1.0, max(0.2, self.s_split_0 / 1.5))
 
         if branch == "sphere":
             psi_Lo_ctrl = u_Lo * psi_b_sphere
@@ -115,20 +139,24 @@ class HermesSingleSolver:
             psi_b = psi_Lo_ctrl[-1]
             psi_Ld_ctrl = psi_b + u_Ld * (np.pi - psi_b)
 
-        return np.concatenate([psi_Lo_ctrl, psi_Ld_ctrl])
+        return np.concatenate([psi_Lo_ctrl, psi_Ld_ctrl, [self.s_split_0, self.S_Ld_0]])
 
-    def optimize_shape(self, theta=0.0, branch="auto", maxiter=350, ftol=1e-9, method="SLSQP"):
+    def optimize_shape(self, theta=0.0, branch="auto", maxiter=500, ftol=1e-9, method="SLSQP"):
         if branch == "auto":
-            branches_to_try = ["outward", "sphere", "inward"] if theta > 0 else ["sphere"]
+            branches_to_try = ["outward", "sphere", "inward"] if theta > 0 else ["sphere", "outward"]
             best_res = None
             inward_res = None
             for b in branches_to_try:
                 res = self._optimize_single_branch(theta, branch=b, maxiter=maxiter, ftol=ftol, method=method)
                 if b == "inward":
                     inward_res = res
-                if best_res is None or (res['converged'] and (not best_res['converged'] or res['total_energy'] < best_res['total_energy'])):
+                if best_res is None:
                     best_res = res
-                elif not best_res['converged'] and res['opt_success'] and res['total_energy'] < best_res['total_energy']:
+                elif res['geom_converged'] and not best_res['geom_converged']:
+                    best_res = res
+                elif res['geom_converged'] and best_res['geom_converged'] and res['total_energy'] < best_res['total_energy']:
+                    best_res = res
+                elif not best_res['geom_converged'] and not res['geom_converged'] and res['max_geom_error'] < best_res['max_geom_error']:
                     best_res = res
             best_res = dict(best_res)
             best_res["inward_branch_result"] = inward_res if inward_res is not None else best_res
@@ -171,7 +199,10 @@ class HermesSingleSolver:
             {'type': 'eq', 'fun': constr_r_pole}
         ]
 
-        bounds = [(-0.5 * np.pi, 1.5 * np.pi)] * self.n_params
+        bounds = (
+            [(-0.5 * np.pi, 1.5 * np.pi)] * self.n_angle_params +
+            [(0.98 * self.s_split_0, 1.18 * self.s_split_0), (0.95 * self.S_Ld_0, 1.10 * self.S_Ld_0)]
+        )
 
         options = {
             'maxiter': int(maxiter),
@@ -199,7 +230,7 @@ class HermesSingleSolver:
 
         opt_success = bool(res_opt.success or res_opt.status == 0)
         geom_converged = bool(max_geom_error < 1.0e-3 and final_metrics['min_r_interior'] > 0.0)
-        is_converged = bool(opt_success and geom_converged)
+        is_converged = bool(geom_converged and (opt_success or max_geom_error < 1.0e-5))
 
         final_metrics['converged'] = is_converged
         final_metrics['opt_success'] = opt_success

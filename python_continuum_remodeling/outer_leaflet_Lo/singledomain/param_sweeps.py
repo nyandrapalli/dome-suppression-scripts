@@ -30,22 +30,22 @@ def _solve_single_case(task):
     )
     solver = HermesSingleSolver(params=params, n_points=120)
 
-    branch = "sphere" if theta == 0.0 else "auto"
-    res = solver.optimize_shape(theta=theta, branch=branch, maxiter=350, ftol=1e-9)
+    branch = "auto"
+    res = solver.optimize_shape(theta=theta, branch=branch, maxiter=500, ftol=1e-9)
     inw = res.get("inward_branch_result", res)
 
     if prof_file:
         prof_path = os.path.join(out_dir, "profiles", prof_file)
         os.makedirs(os.path.dirname(prof_path), exist_ok=True)
         df_prof = pd.DataFrame({
-            "s_um": solver.s_grid,
+            "s_um": res["s"],
             "psi_rad": res["psi"],
             "r_um": res["r"],
             "z_um": res["z"],
             "H_um_inv": res["H"],
             "K_um_inv2": res["K"]
         })
-        df_prof["domain"] = np.where(solver.s_grid <= solver.s_split + 1e-12, "Lo", "Ld")
+        df_prof["domain"] = np.where(res["s"] <= res["s_split"] + 1e-12, "Lo", "Ld")
         df_prof.to_csv(prof_path, index=False)
 
     props = get_effective_properties(params, theta)

@@ -39,23 +39,26 @@ def _solve_two_domain_case(task):
     )
     solver = TwoDomainVesicleSolver(params=params, n_points=101)
 
-    branch = "sphere" if theta == 0.0 else "auto"
-    res = solver.optimize_shape(theta=theta, branch=branch, maxiter=350, ftol=1e-9)
+    branch = "auto"
+    res = solver.optimize_shape(theta=theta, branch=branch, maxiter=500, ftol=1e-9)
     inw = res.get("inward_branch_result", res)
 
     if prof_file:
         prof_path = os.path.join(out_dir, "profiles", prof_file)
         os.makedirs(os.path.dirname(prof_path), exist_ok=True)
+        s_prof = res.get("s_profile", solver.s_grid)
+        s_sp1 = res.get("s_split1", solver.s_split1)
+        s_sp2 = res.get("s_split2", solver.s_split2)
         dom_tags = []
-        for s_val in solver.s_grid:
-            if s_val <= solver.s_split1 + 1e-12:
+        for s_val in s_prof:
+            if s_val <= s_sp1 + 1e-12:
                 dom_tags.append("Lo_north")
-            elif s_val >= solver.s_split2 - 1e-12:
+            elif s_val >= s_sp2 - 1e-12:
                 dom_tags.append("Lo_south")
             else:
                 dom_tags.append("Ld")
         df_prof = pd.DataFrame({
-            "s_um": solver.s_grid,
+            "s_um": s_prof,
             "psi_rad": res["psi_profile"],
             "r_um": res["r_profile"],
             "z_um": res["z_profile"],
@@ -67,8 +70,9 @@ def _solve_two_domain_case(task):
 
         if theta > 0.0 and inw.get("dimple_depth_north", 0.0) < 0.0 and res.get("branch") != "inward":
             inw_prof_path = os.path.join(out_dir, "profiles", prof_file.replace(".csv", "_inward.csv"))
+            s_inw = inw.get("s_profile", s_prof)
             df_inw = pd.DataFrame({
-                "s_um": solver.s_grid,
+                "s_um": s_inw,
                 "psi_rad": inw["psi_profile"],
                 "r_um": inw["r_profile"],
                 "z_um": inw["z_profile"],

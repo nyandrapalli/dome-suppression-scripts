@@ -84,7 +84,7 @@ class TwoDomainEnergyCalculator:
         kappa_Lo = self.p.kappa_Lo_0 + theta * self.p.kappa_prot_sat
         kappa_Ld = self.p.kappa_Ld
 
-        c0_Lo = self.p.c0_Lo_0 + self.p.alpha_c0 * theta
+        c0_Lo = self.p.c0_Lo_0 - self.p.alpha_c0 * theta
         c0_Ld = self.p.c0_Ld  # 0.0
 
         delta_kappa_G = self.p.gaussian_ratio * (kappa_Lo - kappa_Ld)
@@ -95,7 +95,7 @@ class TwoDomainEnergyCalculator:
         d_m_nm = (self.p.d_Lo + self.p.d_Ld) / 2.0 * 1e9
         d_m_um = d_m_nm * 1e-3
         delta_A0_bare = 8.0 * np.pi * self.p.R_ves * d_m_um
-        delta_A0_shift = + self.p.eta_outer_expansion * theta * f_Lo_tot * delta_A0_bare
+        delta_A0_shift = - self.p.eta_outer_expansion * theta * f_Lo_tot * delta_A0_bare
 
         k_ade_Lo = self.p.k_ade_ratio * kappa_Lo
         k_ade_Ld = self.p.k_ade_ratio * kappa_Ld
@@ -198,7 +198,8 @@ class TwoDomainEnergyCalculator:
         z_peak_north = float(np.max(z_north_hem))
         peak_to_dimple_Lo_north = float(z1[0] - z_peak_Lo_north)
         peak_to_dimple_crest_north = float(z1[0] - z_peak_north)
-        dome_peak_to_dimple_north = peak_to_dimple_crest_north if z_peak_north > z1[0] + 1e-5 else dimple_depth_north
+        has_dimple_crest = (z_peak_north > z1[0] + 1e-3) and (z_peak_north > z_b1 + 1e-3)
+        dome_peak_to_dimple_north = peak_to_dimple_crest_north if has_dimple_crest else dimple_depth_north
         dome_peak_to_dimple_south = dome_peak_to_dimple_north
 
         # 1. Helfrich Bending Energy

@@ -93,8 +93,8 @@ def get_effective_properties(params, theta):
     kappa_Lo = params.kappa_Lo_0 + theta * params.kappa_prot_sat
     kappa_Ld = params.kappa_Ld
 
-    # 2. Spontaneous curvatures (um^-1): outer leaflet Lo is positive, Ld is 0
-    c0_Lo = params.c0_Lo_0 + params.alpha_c0 * theta
+    # 2. Spontaneous curvatures (um^-1): outer-leaflet Lo condensation/wrapping -> negative c0_Lo
+    c0_Lo = params.c0_Lo_0 - params.alpha_c0 * theta
     c0_Ld = params.c0_Ld  # 0.0
 
     # 3. Line tension in k_B T / um
@@ -104,13 +104,13 @@ def get_effective_properties(params, theta):
     # 4. Gauss-Bonnet bending modulus difference
     delta_kappa_G = params.gaussian_ratio * (kappa_Lo - kappa_Ld)
 
-    # 5. ADE Parameters weighted by protein-bound Lo domain area fraction
+    # 5. ADE Parameters (outer-leaflet Lo condensation shrinks A_out -> decreases Delta A0 = A_out - A_in)
     f_Lo = params.A_Lo_target / params.A_tot_target
     f_Ld = params.A_Ld_target / params.A_tot_target
     d_m_nm = (params.d_Lo + params.d_Ld) / 2.0 * 1e9
     d_m_um = d_m_nm * 1e-3
     delta_A0_bare = 8.0 * np.pi * params.R_ves * d_m_um
-    delta_A0_shift = + params.eta_outer_expansion * theta * f_Lo * delta_A0_bare
+    delta_A0_shift = - params.eta_outer_expansion * theta * f_Lo * delta_A0_bare
 
     k_ade_Lo = params.k_ade_ratio * kappa_Lo
     k_ade_Ld = params.k_ade_ratio * kappa_Ld
@@ -291,7 +291,8 @@ def compute_energy_breakdown_piecewise(s_Lo, psi_Lo, c1_Lo, s_Ld, psi_Ld, c1_Ld,
     z_peak_north = float(np.max(z[:len(z) // 2]))
     peak_to_dimple_Lo = float(z_Lo[0] - z_peak_Lo)
     peak_to_dimple_crest = float(z_Lo[0] - z_peak_north)
-    dome_peak_to_dimple = peak_to_dimple_crest if z_peak_north > z_Lo[0] + 1e-5 else dimple_depth
+    has_dimple_crest = (z_peak_north > z_Lo[0] + 1e-3) and (z_peak_north > z_b + 1e-3)
+    dome_peak_to_dimple = peak_to_dimple_crest if has_dimple_crest else dimple_depth
 
     return {
         'total_energy': total_physical_energy,

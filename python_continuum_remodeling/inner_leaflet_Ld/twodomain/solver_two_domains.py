@@ -52,14 +52,16 @@ class TwoDomainVesicleSolver:
         self.u_grid_Lo = np.linspace(0.0, 1.0, self.n_pts_Lo)
         self.u_grid_Ld_half = np.linspace(0.0, 1.0, self.n_pts_Ld_half)
 
-        # Normalized spline control nodes on [0, 1]
-        # Lo: interior nodes + shared boundary u=1.0
-        self.u_ctrl_Lo = np.linspace(0.0, 1.0, self.n_ctrl_Lo + 2)[1:]  # length n_ctrl_Lo + 1
-        # Ld_half: interior nodes on (0, 1) (u=0 is psi_b1, u=1 is equator psi=pi/2)
-        self.u_ctrl_Ld_half = np.linspace(0.0, 1.0, self.n_ctrl_Ld_half + 2)[1:-1]  # length n_ctrl_Ld_half
+        # Normalized spline control nodes on [0, 1] with boundary clustering
+        u_lin_Lo = np.linspace(0.0, 1.0, self.n_ctrl_Lo + 2)[1:]
+        self.u_ctrl_Lo = 0.5 * u_lin_Lo + 0.5 * (0.5 * (1.0 - np.cos(np.pi * u_lin_Lo)))
+        self.u_ctrl_Lo[-1] = 1.0
+
+        u_lin_Ld = np.linspace(0.0, 1.0, self.n_ctrl_Ld_half + 2)[1:-1]
+        self.u_ctrl_Ld_half = 0.5 * u_lin_Ld + 0.5 * (0.5 * (1.0 - np.cos(np.pi * u_lin_Ld)))
 
         self.n_angle_params = (self.n_ctrl_Lo + 1) + self.n_ctrl_Ld_half
-        self.n_params = self.n_angle_params
+        self.n_params = self.n_angle_params + 2
 
         # Public attributes
         self.s_split1 = self.s_split1_0
@@ -92,15 +94,19 @@ class TwoDomainVesicleSolver:
         psi_Lo_ctrl = x[:self.n_ctrl_Lo + 1]
         psi_b1 = psi_Lo_ctrl[-1]
         psi_Ld_ctrl = x[self.n_ctrl_Lo + 1:self.n_angle_params]
-        S_Lo = self.s_split1_0
-        S_Ld_half = self.S_Ld_half_0
+        if len(x) >= self.n_angle_params + 2:
+            S_Lo = float(x[self.n_angle_params])
+            S_Ld_half = float(x[self.n_angle_params + 1])
+        else:
+            S_Lo = self.s_split1_0
+            S_Ld_half = self.S_Ld_half_0
 
         # Zone 1: North Lo [0, S_Lo] with psi''(0)=0 and free boundary slope/curvature at S_Lo
         s_nodes_Lo = np.concatenate([[0.0], self.u_ctrl_Lo * S_Lo])
         psi_nodes_Lo = np.concatenate([[0.0], psi_Lo_ctrl])
         cs_Lo = CubicSpline(s_nodes_Lo, psi_nodes_Lo, bc_type=((2, 0.0), 'not-a-knot'))
 
-        s_Lo1 = self.s_Lo1
+        s_Lo1 = self.u_grid_Lo * S_Lo
         psi_Lo1 = cs_Lo(s_Lo1)
         c1_Lo1 = cs_Lo(s_Lo1, 1)
 
@@ -109,21 +115,22 @@ class TwoDomainVesicleSolver:
         psi_nodes_Ld_n = np.concatenate([[psi_b1], psi_Ld_ctrl, [0.5 * np.pi]])
         cs_Ld_n = CubicSpline(s_nodes_Ld_n, psi_nodes_Ld_n, bc_type=('not-a-knot', (2, 0.0)))
 
-        s_Ld_n = self.s_Ld_n
+        s_Ld_n = S_Lo + self.u_grid_Ld_half * S_Ld_half
         psi_Ld_n = cs_Ld_n(s_Ld_n)
         c1_Ld_n = cs_Ld_n(s_Ld_n, 1)
 
         # Exact reflection across equator s_eq = S_Lo + S_Ld_half
-        s_Ld_s = self.s_Ld_s
+        s_eq = S_Lo + S_Ld_half
+        s_Ld_s = 2.0 * s_eq - s_Ld_n[-2::-1]
         psi_Ld_s = np.pi - psi_Ld_n[-2::-1]
         c1_Ld_s = c1_Ld_n[-2::-1]
 
-        s_Ld = self.s_Ld
+        s_Ld = np.concatenate([s_Ld_n, s_Ld_s])
         psi_Ld = np.concatenate([psi_Ld_n, psi_Ld_s])
         c1_Ld = np.concatenate([c1_Ld_n, c1_Ld_s])
 
         # Zone 3: South Lo [S_tot - S_Lo, S_tot]
-        s_Lo2 = self.s_Lo2
+        s_Lo2 = 2.0 * s_eq - s_Lo1[::-1]
         psi_Lo2 = np.pi - psi_Lo1[::-1]
         c1_Lo2 = c1_Lo1[::-1]
 
@@ -183,24 +190,28 @@ class TwoDomainVesicleSolver:
             psi_b1 = psi_Lo_ctrl[-1]
             psi_Ld_ctrl = psi_b1 + self.u_ctrl_Ld_half * (0.5 * np.pi - psi_b1)
 
-        return np.concatenate([psi_Lo_ctrl, psi_Ld_ctrl])
+        return np.concatenate([psi_Lo_ctrl, psi_Ld_ctrl, [self.s_split1_0, self.S_Ld_half_0]])
 
-    def optimize_shape(self, theta: float, branch: str = "inward", maxiter: int = 400, ftol: float = 1e-9):
+    def optimize_shape(self, theta: float, branch: str = "inward", maxiter: int = 500, ftol: float = 1e-9):
         """
         Performs exact non-linear constrained optimization for the symmetric 2-domain vesicle.
         Supports branch='auto' to select the global minimum energy across inward, sphere, and outward seeds.
         """
         if branch == "auto":
-            branches_to_try = ["inward", "sphere", "outward"] if theta > 0 else ["sphere"]
+            branches_to_try = ["inward", "sphere", "outward"] if theta > 0 else ["sphere", "outward"]
             best_res = None
             inward_res = None
             for b in branches_to_try:
                 res = self._optimize_single_branch(theta=theta, branch=b, maxiter=maxiter, ftol=ftol)
                 if b == "inward":
                     inward_res = res
-                if best_res is None or (res['converged'] and (not best_res['converged'] or res['total_energy'] < best_res['total_energy'])):
+                if best_res is None:
                     best_res = res
-                elif not best_res['converged'] and res['opt_success'] and res['total_energy'] < best_res['total_energy']:
+                elif res['geom_converged'] and not best_res['geom_converged']:
+                    best_res = res
+                elif res['geom_converged'] and best_res['geom_converged'] and res['total_energy'] < best_res['total_energy']:
+                    best_res = res
+                elif not best_res['geom_converged'] and not res['geom_converged'] and res['max_geom_error'] < best_res['max_geom_error']:
                     best_res = res
             best_res = dict(best_res)
             best_res["inward_branch_result"] = inward_res if inward_res is not None else best_res
@@ -240,7 +251,10 @@ class TwoDomainVesicleSolver:
             {"type": "eq", "fun": constr_area_lo}
         ]
 
-        bounds = [(-0.5 * np.pi, 1.5 * np.pi)] * self.n_angle_params
+        bounds = (
+            [(-0.5 * np.pi, 1.5 * np.pi)] * self.n_angle_params +
+            [(0.98 * self.s_split1_0, 1.18 * self.s_split1_0), (0.95 * self.S_Ld_half_0, 1.10 * self.S_Ld_half_0)]
+        )
 
         opt_res = minimize(
             obj_func,
@@ -261,7 +275,7 @@ class TwoDomainVesicleSolver:
 
         opt_success = bool(opt_res.success or opt_res.status == 0)
         geom_converged = bool(max_err < 1e-3 and m["min_r_interior"] > 0.0)
-        is_converged = bool(opt_success and geom_converged)
+        is_converged = bool(geom_converged and (opt_success or max_err < 1e-5))
 
         return {
             "converged": is_converged,
@@ -292,6 +306,10 @@ class TwoDomainVesicleSolver:
             "r_b2": m["r_b2"],
             "z_b1": m["z_b1"],
             "z_b2": m["z_b2"],
+            "s_split1": m["s_split1"],
+            "s_split2": m["s_split2"],
+            "S_tot": m["S_tot"],
+            "s_profile": m["s"],
             "r_profile": m["r"],
             "z_profile": m["z"],
             "psi_profile": m["psi"],

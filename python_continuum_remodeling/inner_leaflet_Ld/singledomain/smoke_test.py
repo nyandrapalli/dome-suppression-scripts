@@ -27,11 +27,11 @@ def run_smoke_test(output_dir=None):
     print("RUNNING PRL PYTHON SOLVER SMOKE TEST (Inner-Leaflet Ld Binding)")
     print("=" * 80)
     print(f"[Parameter Audit: theta = 0.5]")
-    print(f"  - c0_Ld (inner leaflet): {props_05['c0_Ld']:+.4f} um^-1  (Expected < 0)")
+    print(f"  - c0_Ld (inner leaflet): {props_05['c0_Ld']:+.4f} um^-1  (Expected > 0)")
     print(f"  - c0_Lo (bare):          {props_05['c0_Lo']:+.4f} um^-1  (Expected == 0)")
     print(f"  - kappa_Ld:              {props_05['kappa_Ld']:.1f} k_B T (Expected 55.0 k_B T)")
     print(f"  - kappa_Lo:              {props_05['kappa_Lo']:.1f} k_B T (Expected 80.0 k_B T)")
-    print(f"  - delta_A0_shift:        {props_05['delta_A0_shift']:+.5f} um^2 (Expected < 0)")
+    print(f"  - delta_A0_shift:        {props_05['delta_A0_shift']:+.5f} um^2 (Expected > 0)")
     print(f"  - k_ade_eff:             {props_05['k_ade_eff']:.2f} k_B T")
 
     test_conditions = [

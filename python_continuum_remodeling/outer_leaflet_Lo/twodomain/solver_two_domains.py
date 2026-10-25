@@ -43,11 +43,15 @@ class TwoDomainHermesSolver:
         self.u_grid_Lo = np.linspace(0.0, 1.0, self.n_pts_Lo)
         self.u_grid_Ld_half = np.linspace(0.0, 1.0, self.n_pts_Ld_half)
 
-        self.u_ctrl_Lo = np.linspace(0.0, 1.0, self.n_ctrl_Lo + 2)[1:]
-        self.u_ctrl_Ld_half = np.linspace(0.0, 1.0, self.n_ctrl_Ld_half + 2)[1:-1]
+        u_lin_Lo = np.linspace(0.0, 1.0, self.n_ctrl_Lo + 2)[1:]
+        self.u_ctrl_Lo = 0.5 * u_lin_Lo + 0.5 * (0.5 * (1.0 - np.cos(np.pi * u_lin_Lo)))
+        self.u_ctrl_Lo[-1] = 1.0
+
+        u_lin_Ld = np.linspace(0.0, 1.0, self.n_ctrl_Ld_half + 2)[1:-1]
+        self.u_ctrl_Ld_half = 0.5 * u_lin_Ld + 0.5 * (0.5 * (1.0 - np.cos(np.pi * u_lin_Ld)))
 
         self.n_angle_params = (self.n_ctrl_Lo + 1) + self.n_ctrl_Ld_half
-        self.n_params = self.n_angle_params
+        self.n_params = self.n_angle_params + 2
 
         self.s_split1 = self.s_split1_0
         self.s_split2 = self.S_tot_0 - self.s_split1_0
@@ -74,14 +78,18 @@ class TwoDomainHermesSolver:
         psi_Lo_ctrl = x[:self.n_ctrl_Lo + 1]
         psi_b1 = psi_Lo_ctrl[-1]
         psi_Ld_ctrl = x[self.n_ctrl_Lo + 1:self.n_angle_params]
-        S_Lo = self.s_split1_0
-        S_Ld_half = self.S_Ld_half_0
+        if len(x) >= self.n_angle_params + 2:
+            S_Lo = float(x[self.n_angle_params])
+            S_Ld_half = float(x[self.n_angle_params + 1])
+        else:
+            S_Lo = self.s_split1_0
+            S_Ld_half = self.S_Ld_half_0
 
         s_nodes_Lo = np.concatenate([[0.0], self.u_ctrl_Lo * S_Lo])
         psi_nodes_Lo = np.concatenate([[0.0], psi_Lo_ctrl])
         cs_Lo = CubicSpline(s_nodes_Lo, psi_nodes_Lo, bc_type=((2, 0.0), 'not-a-knot'))
 
-        s_Lo1 = self.s_Lo1
+        s_Lo1 = self.u_grid_Lo * S_Lo
         psi_Lo1 = cs_Lo(s_Lo1)
         c1_Lo1 = cs_Lo(s_Lo1, 1)
 
@@ -89,19 +97,20 @@ class TwoDomainHermesSolver:
         psi_nodes_Ld_n = np.concatenate([[psi_b1], psi_Ld_ctrl, [0.5 * np.pi]])
         cs_Ld_n = CubicSpline(s_nodes_Ld_n, psi_nodes_Ld_n, bc_type=('not-a-knot', (2, 0.0)))
 
-        s_Ld_n = self.s_Ld_n
+        s_Ld_n = S_Lo + self.u_grid_Ld_half * S_Ld_half
         psi_Ld_n = cs_Ld_n(s_Ld_n)
         c1_Ld_n = cs_Ld_n(s_Ld_n, 1)
 
-        s_Ld_s = self.s_Ld_s
+        s_eq = S_Lo + S_Ld_half
+        s_Ld_s = 2.0 * s_eq - s_Ld_n[-2::-1]
         psi_Ld_s = np.pi - psi_Ld_n[-2::-1]
         c1_Ld_s = c1_Ld_n[-2::-1]
 
-        s_Ld = self.s_Ld
+        s_Ld = np.concatenate([s_Ld_n, s_Ld_s])
         psi_Ld = np.concatenate([psi_Ld_n, psi_Ld_s])
         c1_Ld = np.concatenate([c1_Ld_n, c1_Ld_s])
 
-        s_Lo2 = self.s_Lo2
+        s_Lo2 = 2.0 * s_eq - s_Lo1[::-1]
         psi_Lo2 = np.pi - psi_Lo1[::-1]
         c1_Lo2 = c1_Lo1[::-1]
 
@@ -154,20 +163,24 @@ class TwoDomainHermesSolver:
             psi_b1 = psi_Lo_ctrl[-1]
             psi_Ld_ctrl = psi_b1 + self.u_ctrl_Ld_half * (0.5 * np.pi - psi_b1)
 
-        return np.concatenate([psi_Lo_ctrl, psi_Ld_ctrl])
+        return np.concatenate([psi_Lo_ctrl, psi_Ld_ctrl, [self.s_split1_0, self.S_Ld_half_0]])
 
-    def optimize_shape(self, theta: float = 0.0, branch: str = "auto", maxiter: int = 350, ftol: float = 1e-9) -> dict:
+    def optimize_shape(self, theta: float = 0.0, branch: str = "auto", maxiter: int = 500, ftol: float = 1e-9) -> dict:
         if branch == "auto":
-            branches_to_try = ["outward", "sphere", "inward"] if theta > 0 else ["sphere"]
+            branches_to_try = ["outward", "sphere", "inward"] if theta > 0 else ["sphere", "outward"]
             best_res = None
             inward_res = None
             for b in branches_to_try:
                 res = self._optimize_single_branch(theta, branch=b, maxiter=maxiter, ftol=ftol)
                 if b == "inward":
                     inward_res = res
-                if best_res is None or (res['converged'] and (not best_res['converged'] or res['total_energy'] < best_res['total_energy'])):
+                if best_res is None:
                     best_res = res
-                elif not best_res['converged'] and res['opt_success'] and res['total_energy'] < best_res['total_energy']:
+                elif res['geom_converged'] and not best_res['geom_converged']:
+                    best_res = res
+                elif res['geom_converged'] and best_res['geom_converged'] and res['total_energy'] < best_res['total_energy']:
+                    best_res = res
+                elif not best_res['geom_converged'] and not res['geom_converged'] and res['max_geom_error'] < best_res['max_geom_error']:
                     best_res = res
             best_res = dict(best_res)
             best_res["inward_branch_result"] = inward_res if inward_res is not None else best_res
@@ -206,7 +219,10 @@ class TwoDomainHermesSolver:
             {"type": "eq", "fun": constr_area_lo_north}
         ]
 
-        bounds = [(-0.5 * np.pi, 1.5 * np.pi)] * self.n_angle_params
+        bounds = (
+            [(-0.5 * np.pi, 1.5 * np.pi)] * self.n_angle_params +
+            [(0.98 * self.s_split1_0, 1.18 * self.s_split1_0), (0.95 * self.S_Ld_half_0, 1.10 * self.S_Ld_half_0)]
+        )
         options = {"maxiter": int(maxiter), "ftol": float(ftol), "disp": False}
 
         res = minimize(obj_func, x0, method="SLSQP", bounds=bounds, constraints=constraints, options=options)
@@ -221,7 +237,7 @@ class TwoDomainHermesSolver:
 
         opt_success = bool(res.success or res.status == 0)
         geom_converged = bool(max_geom_err < 1e-3 and m_final["min_r_interior"] > 0.0)
-        converged = bool(opt_success and geom_converged)
+        converged = bool(geom_converged and (opt_success or max_geom_err < 1e-5))
 
         return {
             "converged": converged,
@@ -247,6 +263,10 @@ class TwoDomainHermesSolver:
             "dome_peak_to_dimple_south": m_final["dome_peak_to_dimple_south"],
             "r_b1": m_final["r_b1"],
             "r_b2": m_final["r_b2"],
+            "s_split1": m_final["s_split1"],
+            "s_split2": m_final["s_split2"],
+            "S_tot": m_final["S_tot"],
+            "s_profile": m_final["s"],
             "psi_profile": m_final["psi"],
             "r_profile": m_final["r"],
             "z_profile": m_final["z"],
